@@ -1628,7 +1628,7 @@ namespace DoubleBosses
     class HiveKnightControl : MonoBehaviour
     {
         internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
-            (2, 0, 67.67f, 37.34f),
+            (2, 0, 67.67f, 40.34f),
         };
         List<GameObject> HiveKnights;
         void Start()
@@ -1651,12 +1651,31 @@ namespace DoubleBosses
                 .Map(info => {
                     GameObject prefab = HiveKnights[info.prefab];
                     var extra = GameObject.Instantiate(prefab);
-                    extra.transform.position = prefab.transform.position with { x = info.x, y = info.y };
+                    extra.transform.position = prefab.transform.position with { x = info.x, y = 28.69393f };
                     extra.name = prefab.name + " " + info.num;
                     return extra;
                 })
                 .ToArray();
             HiveKnights.AddRange(extraHiveKnights);
+
+            GameObject Globs = GameObject.Find("Globs");
+            var extraGlobs= GameObject.Instantiate(Globs, Globs.transform.parent);
+            var extraGlobsFSM = extraGlobs.LocateMyFSM("Control");
+            extraGlobs.name = "Globs 2";
+
+
+            PlayMakerFSM hiveKnightFSM = HiveKnights[1].LocateMyFSM("Control");
+            hiveKnightFSM.GetState("Glob Strike").Actions[3] = new CustomFsmAction()
+            {
+                method = () => {
+                    extraGlobsFSM.SendEvent("FIRE");
+
+                }
+            };
+            hiveKnightFSM.DisableAction("Fall",1);
+            hiveKnightFSM.DisableAction("Intro", 3);
+            hiveKnightFSM.DisableAction("Intro", 1);
+            hiveKnightFSM.DisableAction("Intro End", 2);
         }
         bool AllHiveKnightsDead()
         {
@@ -1684,7 +1703,12 @@ namespace DoubleBosses
                 {
                     fsm.SendEvent("WAKE");
                 }
+                else if (fsm.ActiveStateName == "Fall")
+                {
+                    fsm.SendEvent("LAND");
+                }
             }
+
         }
 
 
