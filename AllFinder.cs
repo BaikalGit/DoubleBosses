@@ -36,6 +36,7 @@ namespace DoubleBosses
         { "GG_Mantis_Lords_V", () => FindAndCreate<SistersControl>("Mantis Lord") },
         { "GG_Oblobbles", () => FindAndCreate<OblobblesControl>("Mega Fat Bee") },
         { "GG_Hive_Knight", () => FindAndCreate<HiveKnightControl>("Hive Knight") },
+        { "GG_Broken_Vessel", () => FindAndCreate<BrokenVesselControl>("Infected Knight") },
 
         };
 

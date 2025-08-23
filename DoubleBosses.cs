@@ -30,6 +30,7 @@ namespace DoubleBosses
     "Fluke Mother", "Fluke Mother 2",
     "Mega Fat Bee", "Mega Fat Bee (1)", "Mega Fat Bee 2", "Mega Fat Bee (1) 2",
     "Hive Knight", "Hive Knight 2",
+    "Infected Knight", "Infected Knight 2",
         };
 
         public static Dictionary<string, bool> BossDeathStatus = new Dictionary<string, bool>();

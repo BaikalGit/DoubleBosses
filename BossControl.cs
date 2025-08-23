@@ -7,6 +7,7 @@ using System.Collections;
 using System.Globalization;
 using System.Security.Cryptography;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 using UnityEngine.SceneManagement;
 using static UnityEngine.UI.GridLayoutGroup;
 
@@ -1663,6 +1664,48 @@ namespace DoubleBosses
             var extraGlobsFSM = extraGlobs.LocateMyFSM("Control");
             extraGlobs.name = "Globs 2";
 
+            GameObject beeDropper1 = GameObject.Find("Bee Dropper");
+            var extraDropper1 = GameObject.Instantiate(beeDropper1, beeDropper1.transform.parent);
+            var extraDropper1FSM = extraDropper1.LocateMyFSM("Control");
+            extraDropper1.name = "Bee Dropper 2";
+            extraDropper1.transform.parent = null;
+
+            GameObject beeDropper2 = GameObject.Find("Bee Dropper (1)");
+            var extraDropper2 = GameObject.Instantiate(beeDropper2, beeDropper2.transform.parent);
+            var extraDropper2FSM = extraDropper2.LocateMyFSM("Control");
+            extraDropper2.name = "Bee Dropper (1) 2";
+            extraDropper2.transform.parent = null;
+
+            GameObject beeDropper3 = GameObject.Find("Bee Dropper (2)");
+            var extraDropper3 = GameObject.Instantiate(beeDropper3, beeDropper3.transform.parent);
+            var extraDropper3FSM = extraDropper3.LocateMyFSM("Control");
+            extraDropper3.name = "Bee Dropper (2) 2";
+            extraDropper3.transform.parent = null;
+
+            GameObject beeDropper4 = GameObject.Find("Bee Dropper (3)");
+            var extraDropper4 = GameObject.Instantiate(beeDropper4, beeDropper4.transform.parent);
+            var extraDropper4FSM = extraDropper4.LocateMyFSM("Control");
+            extraDropper4.name = "Bee Dropper (3) 2";
+            extraDropper4.transform.parent = null;
+
+            GameObject beeDropper5 = GameObject.Find("Bee Dropper (4)");
+            var extraDropper5 = GameObject.Instantiate(beeDropper5, beeDropper5.transform.parent);
+            var extraDropper5FSM = extraDropper5.LocateMyFSM("Control");
+            extraDropper5.name = "Bee Dropper (4) 2";
+            extraDropper5.transform.parent = null;
+
+            GameObject beeDropper6 = GameObject.Find("Bee Dropper (5)");
+            var extraDropper6 = GameObject.Instantiate(beeDropper6, beeDropper6.transform.parent);
+            var extraDropper6FSM = extraDropper6.LocateMyFSM("Control");
+            extraDropper1.name = "Bee Dropper (5) 2";
+            extraDropper6.transform.parent = null;
+
+            GameObject beeDropper7 = GameObject.Find("Bee Dropper (6)");
+            var extraDropper7 = GameObject.Instantiate(beeDropper7, beeDropper7.transform.parent);
+            var extraDropper7FSM = extraDropper7.LocateMyFSM("Control");
+            extraDropper7.name = "Bee Dropper (6) 2";
+            extraDropper7.transform.parent = null;
+
 
             PlayMakerFSM hiveKnightFSM = HiveKnights[1].LocateMyFSM("Control");
             hiveKnightFSM.GetState("Glob Strike").Actions[3] = new CustomFsmAction()
@@ -1672,10 +1715,26 @@ namespace DoubleBosses
 
                 }
             };
+            hiveKnightFSM.GetState("Roar Recover").Actions[0] = new CustomFsmAction()
+            {
+                method = () => {
+                    extraDropper1FSM.SendEvent("SWARM");
+                    extraDropper2FSM.SendEvent("SWARM");
+                    extraDropper3FSM.SendEvent("SWARM");
+                    extraDropper4FSM.SendEvent("SWARM");
+                    extraDropper5FSM.SendEvent("SWARM");
+                    extraDropper6FSM.SendEvent("SWARM");
+                    extraDropper7FSM.SendEvent("SWARM");
+
+                }
+            };
+            hiveKnightFSM.DisableAction("Fall",4);
+            hiveKnightFSM.DisableAction("Fall",2);
             hiveKnightFSM.DisableAction("Fall",1);
             hiveKnightFSM.DisableAction("Intro", 3);
             hiveKnightFSM.DisableAction("Intro", 1);
             hiveKnightFSM.DisableAction("Intro End", 2);
+            hiveKnightFSM.DisableAction("Jump", 3);
         }
         bool AllHiveKnightsDead()
         {
@@ -1705,10 +1764,16 @@ namespace DoubleBosses
                 }
                 else if (fsm.ActiveStateName == "Fall")
                 {
+                    Collider2D hiveKnightCollider = fsm.gameObject.GetComponent<Collider2D>();
+                    hiveKnightCollider.enabled = true;
                     fsm.SendEvent("LAND");
                 }
+                /*Modding.Logger.Log($"The active state: {fsm.ActiveStateName}");
+                Modding.Logger.Log($"Position: {fsm.gameObject.transform.position}");
+                Modding.Logger.Log($"Jump X: {fsm.FsmVariables.FindFsmFloat("Jump X")}");
+                Modding.Logger.Log($"Jump Y: {fsm.FsmVariables.FindFsmFloat("Jump Y")}");*/
+                fsm.FsmVariables.FindFsmFloat("Jump Y").Value = 60f;
             }
-
         }
 
 
@@ -1729,6 +1794,77 @@ namespace DoubleBosses
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    class BrokenVesselControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 18.92f, 38.82f),
+        };
+        List<GameObject> BrokenVessels;
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            BrokenVessels = new[] { GameObject.Find("Infected Knight")}.ToList();
+
+            GameObject[] extraBrokenVessels = extrasInfo
+                .Map(info => {
+                    GameObject prefab = BrokenVessels[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = info.x, y = info.y };
+                    extra.name = prefab.name + " " + info.num;
+                    return extra;
+                })
+                .ToArray();
+            BrokenVessels.AddRange(extraBrokenVessels);
+
+        }
+        private IEnumerator InitStuff()
+        {
+            yield return new WaitForSeconds(2f);
+
+        }
+        bool AllBrokenVesselsDead()
+        {
+            string[] brokenVesselsNames = { "Infected Knight", "Infected Knight 2" };
+
+            return brokenVesselsNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+
+        void Update()
+        {
+            if (AllBrokenVesselsDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0) // Log only if there are tracked bosses
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+        }
+
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
     class WatchersControl : MonoBehaviour
     {
         bool alreadyDone1 = false;
