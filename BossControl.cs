@@ -3,6 +3,7 @@ using HutongGames.PlayMaker;
 using HutongGames.PlayMaker.Actions;
 using Modding.Utils;
 using Osmi.Game;
+using Steamworks;
 using System.Collections;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -1639,7 +1640,7 @@ namespace DoubleBosses
             {
                 return;
             }
-            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            Modding.Logger.Log($"Hello! I exist! ***************************************************");
             StartCoroutine(InitStuff());
 
         }
@@ -1708,6 +1709,9 @@ namespace DoubleBosses
 
 
             PlayMakerFSM hiveKnightFSM = HiveKnights[1].LocateMyFSM("Control");
+            hiveKnightFSM.Fsm.GetFsmFloat("Left X").Value = 15f;
+            hiveKnightFSM.Fsm.GetFsmFloat("Right X").Value = 35f;
+            hiveKnightFSM.Fsm.GetFsmFloat("Ground Y").Value = 29f;
             hiveKnightFSM.GetState("Glob Strike").Actions[3] = new CustomFsmAction()
             {
                 method = () => {
@@ -1768,11 +1772,6 @@ namespace DoubleBosses
                     hiveKnightCollider.enabled = true;
                     fsm.SendEvent("LAND");
                 }
-                /*Modding.Logger.Log($"The active state: {fsm.ActiveStateName}");
-                Modding.Logger.Log($"Position: {fsm.gameObject.transform.position}");
-                Modding.Logger.Log($"Jump X: {fsm.FsmVariables.FindFsmFloat("Jump X")}");
-                Modding.Logger.Log($"Jump Y: {fsm.FsmVariables.FindFsmFloat("Jump Y")}");*/
-                fsm.FsmVariables.FindFsmFloat("Jump Y").Value = 60f;
             }
         }
 
@@ -1799,7 +1798,8 @@ namespace DoubleBosses
         internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
             (2, 0, 18.92f, 38.82f),
         };
-        List<GameObject> BrokenVessels;
+        List<GameObject> LostKins;
+        bool doneCorpse = false;
         void Start()
         {
 
@@ -1808,35 +1808,43 @@ namespace DoubleBosses
                 return;
             }
             Modding.Logger.Log($"Hello! I exist! ==============================================================================");
-            BrokenVessels = new[] { GameObject.Find("Infected Knight")}.ToList();
+            LostKins = new[] { GameObject.Find("Infected Knight")}.ToList();
+            var deathEffects = LostKins[0].GetComponentInChildren<EnemyDeathEffects>(true);
+            Modding.Logger.Log($"{deathEffects}");
+            var rootType = deathEffects.GetType();
 
-            GameObject[] extraBrokenVessels = extrasInfo
+            var corpse = (GameObject)rootType.GetField("corpse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(deathEffects);
+            Modding.Logger.Log($"{corpse}");
+            if (corpse != null)
+            {
+                Modding.Logger.Log($"We got into Corpse!");
+                PlayMakerFSM corpseFSM = corpse.LocateMyFSM("corpse");
+                corpseFSM.DisableAction("Blow", 7);
+                corpseFSM.DisableAction("BG Open", 1);
+                Modding.Logger.Log($"We done doin the Corpse!!!!");
+            }
+
+            GameObject[] extraLostKins = extrasInfo
                 .Map(info => {
-                    GameObject prefab = BrokenVessels[info.prefab];
+                    GameObject prefab = LostKins[info.prefab];
                     var extra = GameObject.Instantiate(prefab);
                     extra.transform.position = prefab.transform.position with { x = info.x, y = info.y };
                     extra.name = prefab.name + " " + info.num;
                     return extra;
                 })
                 .ToArray();
-            BrokenVessels.AddRange(extraBrokenVessels);
-
+            LostKins.AddRange(extraLostKins);
         }
-        private IEnumerator InitStuff()
+        bool AllLostKinsDead()
         {
-            yield return new WaitForSeconds(2f);
+            string[] LostKinsNames = { "Infected Knight", "Infected Knight 2" };
 
-        }
-        bool AllBrokenVesselsDead()
-        {
-            string[] brokenVesselsNames = { "Infected Knight", "Infected Knight 2" };
-
-            return brokenVesselsNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+            return LostKinsNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
         }
 
         void Update()
         {
-            if (AllBrokenVesselsDead())
+            if (AllLostKinsDead())
             {
                 BossSceneController.Instance.EndBossScene();
             }
@@ -1845,6 +1853,126 @@ namespace DoubleBosses
             {
                 Modding.Logger.Log("Boss Death Status:\n" +
                                     string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+            if (doneCorpse != true)
+            {
+                var deathEffects2 = LostKins[1].GetComponentInChildren<EnemyDeathEffects>(true);
+                Modding.Logger.Log($"{deathEffects2}");
+                var rootType2 = deathEffects2.GetType();
+
+                var corpse2 = (GameObject)rootType2.GetField("corpse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(deathEffects2);
+                Modding.Logger.Log($"{corpse2}");
+                if (corpse2 != null)
+                {
+                    Modding.Logger.Log($"We got into Corpse!");
+                    PlayMakerFSM corpseFSM2 = corpse2.LocateMyFSM("corpse");
+                    corpseFSM2.DisableAction("Blow", 7);
+                    corpseFSM2.DisableAction("BG Open", 1);
+                    Modding.Logger.Log($"We done doin the Corpse!!!!");
+                    doneCorpse = true;
+                }
+            }
+
+
+        }
+
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class LostKinControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 18.92f, 38.82f),
+        };
+        List<GameObject> LostKins;
+        bool doneCorpse = false;
+        bool doneDreamOrb = false;
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            LostKins = new[] { GameObject.Find("Lost Kin") }.ToList();
+            var deathEffects = LostKins[0].GetComponentInChildren<EnemyDeathEffects>(true);
+            Modding.Logger.Log($"{deathEffects}");
+            var rootType = deathEffects.GetType();
+
+            var corpse = (GameObject)rootType.GetField("corpse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(deathEffects);
+            Modding.Logger.Log($"{corpse}");
+            if (corpse != null)
+            {
+                Modding.Logger.Log($"We got into Corpse!");
+                PlayMakerFSM corpseFSM = corpse.LocateMyFSM("corpse");
+                corpseFSM.DisableAction("BG Open", 2);
+                Modding.Logger.Log($"We done doin the Corpse!!!!");
+            }
+
+            GameObject[] extraLostKins = extrasInfo
+                .Map(info => {
+                    GameObject prefab = LostKins[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = info.x, y = info.y };
+                    extra.name = prefab.name + " " + info.num;
+                    return extra;
+                })
+                .ToArray();
+            LostKins.AddRange(extraLostKins);
+            PlayMakerFSM Kin2FSM = LostKins[1].LocateMyFSM("IK Control");
+            Kin2FSM.DisableAction("Set X GG", 0);
+        }
+        bool AllLostKinsDead()
+        {
+            string[] LostKinsNames = { "Lost Kin", "Lost Kin 2" };
+
+            return LostKinsNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+
+        void Update()
+        {
+            if (AllLostKinsDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0) // Log only if there are tracked bosses
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+            if (doneCorpse != true)
+            {
+                var deathEffects2 = LostKins[1].GetComponentInChildren<EnemyDeathEffects>(true);
+                Modding.Logger.Log($"{deathEffects2}");
+                var rootType2 = deathEffects2.GetType();
+
+                var corpse2 = (GameObject)rootType2.GetField("corpse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(deathEffects2);
+                Modding.Logger.Log($"{corpse2}");
+                if (corpse2 != null)
+                {
+                    Modding.Logger.Log($"We got into Corpse!");
+                    PlayMakerFSM corpseFSM2 = corpse2.LocateMyFSM("corpse");
+                    corpseFSM2.DisableAction("BG Open", 2);
+                    Modding.Logger.Log($"We done doin the Corpse!!!!");
+                    doneCorpse = true;
+                }
             }
         }
 
@@ -1865,6 +1993,7 @@ namespace DoubleBosses
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
     class WatchersControl : MonoBehaviour
     {
         bool alreadyDone1 = false;
@@ -2094,12 +2223,14 @@ namespace DoubleBosses
         }
         void Update()
         {
+            /*
             GameObject BattleSub = GameObject.Find("Battle Sub");
             PlayMakerFSM BattleSubFSM = BattleSub.LocateMyFSM("Start");
             if (BattleSubFSM != null)
             {
                 Modding.Logger.Log($"The current state is: {BattleSubFSM.ActiveStateName}");
             }
+            */
         }
     }
 }
