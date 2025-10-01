@@ -1798,7 +1798,7 @@ namespace DoubleBosses
         internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
             (2, 0, 18.92f, 38.82f),
         };
-        List<GameObject> LostKins;
+        List<GameObject> BrokenVessels;
         bool doneCorpse = false;
         void Start()
         {
@@ -1808,8 +1808,8 @@ namespace DoubleBosses
                 return;
             }
             Modding.Logger.Log($"Hello! I exist! ==============================================================================");
-            LostKins = new[] { GameObject.Find("Infected Knight")}.ToList();
-            var deathEffects = LostKins[0].GetComponentInChildren<EnemyDeathEffects>(true);
+            BrokenVessels = new[] { GameObject.Find("Infected Knight")}.ToList();
+            var deathEffects = BrokenVessels[0].GetComponentInChildren<EnemyDeathEffects>(true);
             Modding.Logger.Log($"{deathEffects}");
             var rootType = deathEffects.GetType();
 
@@ -1824,27 +1824,27 @@ namespace DoubleBosses
                 Modding.Logger.Log($"We done doin the Corpse!!!!");
             }
 
-            GameObject[] extraLostKins = extrasInfo
+            GameObject[] extraBrokenVessels = extrasInfo
                 .Map(info => {
-                    GameObject prefab = LostKins[info.prefab];
+                    GameObject prefab = BrokenVessels[info.prefab];
                     var extra = GameObject.Instantiate(prefab);
                     extra.transform.position = prefab.transform.position with { x = info.x, y = info.y };
                     extra.name = prefab.name + " " + info.num;
                     return extra;
                 })
                 .ToArray();
-            LostKins.AddRange(extraLostKins);
+            BrokenVessels.AddRange(extraBrokenVessels);
         }
-        bool AllLostKinsDead()
+        bool AllBrokenVesselsDead()
         {
-            string[] LostKinsNames = { "Infected Knight", "Infected Knight 2" };
+            string[] BrokenVesselsNames = { "Infected Knight", "Infected Knight 2" };
 
-            return LostKinsNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+            return BrokenVesselsNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
         }
 
         void Update()
         {
-            if (AllLostKinsDead())
+            if (AllBrokenVesselsDead())
             {
                 BossSceneController.Instance.EndBossScene();
             }
@@ -1856,7 +1856,7 @@ namespace DoubleBosses
             }
             if (doneCorpse != true)
             {
-                var deathEffects2 = LostKins[1].GetComponentInChildren<EnemyDeathEffects>(true);
+                var deathEffects2 = BrokenVessels[1].GetComponentInChildren<EnemyDeathEffects>(true);
                 Modding.Logger.Log($"{deathEffects2}");
                 var rootType2 = deathEffects2.GetType();
 
@@ -1993,6 +1993,440 @@ namespace DoubleBosses
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class NoskControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 77.33f, 4.4f),
+        };
+        List<GameObject> Nosks;
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            Nosks = new[] { GameObject.Find("Mimic Spider") }.ToList();
+            GameObject[] extraNosks = extrasInfo
+                .Map(info => {
+                    GameObject prefab = Nosks[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = info.x, y = info.y };
+                    extra.name = prefab.name + " " + info.num;
+                    return extra;
+                })
+                .ToArray();
+            Nosks.AddRange(extraNosks);
+        }
+        bool AllNosksDead()
+        {
+            string[] NosksNames = { "Mimic Spider", "Mimic Spider 2" };
+
+            return NosksNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+
+        void Update()
+        {
+            if (AllNosksDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0) // Log only if there are tracked bosses
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+        }
+
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class NoskVControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 79.00f, 5.4f),
+        };
+        List<GameObject> Nosks;
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            Nosks = new[] { GameObject.Find("Mimic Spider") }.ToList();
+            GameObject[] extraNosks = extrasInfo
+                .Map(info => {
+                    GameObject prefab = Nosks[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = info.x, y = info.y };
+                    extra.name = prefab.name + " " + info.num;
+                    return extra;
+                })
+                .ToArray();
+            Nosks.AddRange(extraNosks);
+        }
+        bool AllNosksDead()
+        {
+            string[] NosksNames = { "Mimic Spider", "Mimic Spider 2" };
+
+            return NosksNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+
+        void Update()
+        {
+            if (AllNosksDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0) // Log only if there are tracked bosses
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+        }
+
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class NoskHornetControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 38.34f, 18.00f),
+        };
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            GameObject BattleSube = GameObject.Find("Battle Scene");
+            Transform subTransform = BattleSube.transform;
+            List<Transform> children = new List<Transform>();
+            foreach (Transform child in subTransform)
+            {
+                children.Add(child);
+                child.parent = null;
+            }
+
+            var extraSub = GameObject.Instantiate(BattleSube, BattleSube.transform.parent);
+            extraSub.name = "Battle Scene 2";
+
+            foreach (Transform child in children)
+            {
+                child.parent = BattleSube.transform;
+            }
+
+            foreach (Transform child in extraSub.transform)
+            {
+                if (child.name == "Hornet Nosk" || child.name == "Nosk Transform")
+                {
+                    Destroy(child.gameObject);
+                }
+            }
+            PlayMakerFSM extraSubFSM = extraSub.LocateMyFSM("Battle Control");
+
+            GameObject noskTransform = GameObject.Find("Nosk Transform");
+            var extraTransform = GameObject.Instantiate(noskTransform, extraSub.transform);
+            extraTransform.transform.position = noskTransform.transform.position with { x = 38.34f, y = 14.80f };
+            extraTransform.transform.SetScaleX(-1);
+            extraTransform.name = "Nosk Transform 2";
+            var colliderHornetTransform = extraTransform.GetComponent<Collider2D>();
+            colliderHornetTransform.enabled = false;
+            PlayMakerFSM extraTransformFSM = extraTransform.LocateMyFSM("detect");
+            extraTransformFSM.RemoveAction("Detect", 2);
+            extraTransformFSM.RemoveAction("Detect", 1);
+            extraTransformFSM.RemoveAction("Detect", 0);
+            extraTransformFSM.RemoveAction("Detect No Stay", 1);
+            extraTransformFSM.RemoveAction("Detect No Stay", 0);
+
+
+            GameObject noskHornet = GameObject.Find("Hornet Nosk");
+            var extraNoskHornet = GameObject.Instantiate(noskHornet, extraSub.transform);
+            extraNoskHornet.transform.position = noskHornet.transform.position with { x = 38.34f, y = 14.80f };
+            extraNoskHornet.transform.SetScaleX(-1);
+            extraNoskHornet.name = "Hornet Nosk 2";
+            var meshHornet = extraNoskHornet.GetComponent<MeshRenderer>();
+            var colliderHornet = extraNoskHornet.GetComponent<Collider2D>();
+            var origHornetcollider = noskHornet.GetComponent<Collider2D>();
+            var extraNoskHornetHead = extraNoskHornet.Child("Head Box");
+            extraNoskHornetHead.active = false;
+            meshHornet.enabled = false;
+            colliderHornet.enabled = false;
+
+            var buzDust1 = GameObject.Find("Buzzer Dust (1)").GetComponent<Collider2D>();
+            var buzDust2 = GameObject.Find("Buzzer Dust (2)").GetComponent<Collider2D>();
+            var buzDust3 = GameObject.Find("Buzzer Dust (3)").GetComponent<Collider2D>();
+            var buzDust4 = GameObject.Find("Buzzer Dust (4)").GetComponent<Collider2D>();
+            var buzDust5 = GameObject.Find("Buzzer Dust (5)").GetComponent<Collider2D>();
+            var buzDust6 = GameObject.Find("Buzzer Dust 1 (1)").GetComponent<Collider2D>();
+            var buzDust7 = GameObject.Find("Buzzer Dust 2 (1)").GetComponent<Collider2D>();
+            var buzDust8 = GameObject.Find("Buzzer Dust 3 (1)").GetComponent<Collider2D>();
+            var buzDust9 = GameObject.Find("Buzzer Dust 4 (1)").GetComponent<Collider2D>();
+            var buzDust10= GameObject.Find("Buzzer Dust 5 (1)").GetComponent<Collider2D>();
+            var buzDust11= GameObject.Find("Buzzer Dust 6 (1)").GetComponent<Collider2D>();
+
+
+
+            Physics2D.IgnoreCollision(colliderHornet, origHornetcollider);
+            Physics2D.IgnoreCollision(colliderHornet, buzDust1);
+            Physics2D.IgnoreCollision(colliderHornet, buzDust2);
+            Physics2D.IgnoreCollision(colliderHornet, buzDust3);
+            Physics2D.IgnoreCollision(colliderHornet, buzDust4);
+            Physics2D.IgnoreCollision(colliderHornet, buzDust5);
+            Physics2D.IgnoreCollision(colliderHornet, buzDust6);
+            Physics2D.IgnoreCollision(colliderHornet, buzDust7);
+            Physics2D.IgnoreCollision(colliderHornet, buzDust8);
+            Physics2D.IgnoreCollision(colliderHornet, buzDust9);
+            Physics2D.IgnoreCollision(colliderHornet, buzDust10);
+            Physics2D.IgnoreCollision(colliderHornet, buzDust11);
+
+
+            Physics2D.IgnoreCollision(origHornetcollider, buzDust1);
+            Physics2D.IgnoreCollision(origHornetcollider, buzDust2);
+            Physics2D.IgnoreCollision(origHornetcollider, buzDust3);
+            Physics2D.IgnoreCollision(origHornetcollider, buzDust4);
+            Physics2D.IgnoreCollision(origHornetcollider, buzDust5);
+            Physics2D.IgnoreCollision(origHornetcollider, buzDust6);
+            Physics2D.IgnoreCollision(origHornetcollider, buzDust7);
+            Physics2D.IgnoreCollision(origHornetcollider, buzDust8);
+            Physics2D.IgnoreCollision(origHornetcollider, buzDust9);
+            Physics2D.IgnoreCollision(origHornetcollider, buzDust10);
+            Physics2D.IgnoreCollision(origHornetcollider, buzDust11);
+
+
+
+            GameObject globDropper = GameObject.Find("Glob Dropper");
+            var extraGlobDropper = GameObject.Instantiate(globDropper, extraSub.transform);
+            extraGlobDropper.name = "Glob Dropper 2";
+            PlayMakerFSM extraGlobDropperFSM = extraGlobDropper.LocateMyFSM("Dropper");
+
+
+            extraSubFSM.RemoveAction("Init", 8);
+            extraSubFSM.RemoveAction("Init", 7);
+            extraSubFSM.RemoveAction("Init", 6);
+            extraSubFSM.RemoveAction("Init", 3);
+            extraSubFSM.RemoveAction("Init", 2);
+            extraSubFSM.RemoveAction("Init", 1);
+            extraSubFSM.RemoveAction("Init", 0);
+            extraSubFSM.RemoveAction("GG Music", 1);
+            extraSubFSM.RemoveAction("GG Music", 0);
+            extraSubFSM.RemoveAction("Arena", 2);
+            extraSubFSM.RemoveAction("Arena", 0);
+            extraSubFSM.RemoveAction("Transform 1", 6);
+            extraSubFSM.RemoveAction("Transform 1", 3);
+            extraSubFSM.RemoveAction("Transform 1", 2);
+            extraSubFSM.RemoveAction("Transform 1", 1);
+            extraSubFSM.RemoveAction("Transform 1", 0);
+            extraSubFSM.RemoveAction("Transform 2", 1);
+            extraSubFSM.RemoveAction("Transform 3", 1);
+            extraSubFSM.RemoveAction("Transform 4", 7);
+            extraSubFSM.RemoveAction("Transform 4", 6);
+            extraSubFSM.RemoveAction("Transform 4", 5);
+            extraSubFSM.RemoveAction("Transform 4", 4);
+            extraSubFSM.RemoveAction("Transform 4", 3);
+            extraSubFSM.RemoveAction("Transform 4", 1);
+            extraSubFSM.RemoveAction("Battle Start", 11);
+            extraSubFSM.RemoveAction("Battle Start", 10);
+            extraSubFSM.RemoveAction("Battle Start", 9);
+            extraSubFSM.RemoveAction("Battle Start", 8);
+            extraSubFSM.RemoveAction("Battle Start", 7);
+            extraSubFSM.RemoveAction("Battle Start", 6);
+            extraSubFSM.RemoveAction("Battle Start", 5);
+            extraSubFSM.RemoveAction("Battle Start", 4);
+
+            PlayMakerFSM BattleSubeFSM = BattleSube.LocateMyFSM("Battle Control");
+
+            BattleSubeFSM.GetState("Arena").Actions = new HutongGames.PlayMaker.FsmStateAction[]
+            {
+                new CustomFsmAction()
+                {
+                    method = () => {
+                        extraSubFSM.SendEvent("ENTER");
+                        GameObject.Find("Entry Plat").active = false;
+                    }
+                }
+            };
+
+            extraSubFSM.GetState("Init").Actions[0] = new CustomFsmAction()
+            {
+                method = () => {
+                    extraSubFSM.FsmVariables.FindFsmGameObject("Hornet Nosk").Value = extraNoskHornet;
+                }
+            };
+            extraSubFSM.GetState("Init").Actions[1] = new CustomFsmAction()
+            {
+                method = () => {
+                    extraSubFSM.FsmVariables.FindFsmGameObject("Nosk Transform").Value = extraTransform;
+                }
+            };
+
+
+            PlayMakerFSM extraNoskHornetFSM = extraNoskHornet.LocateMyFSM("Hornet Nosk");
+            PlayMakerFSM noskHornetFSM = noskHornet.LocateMyFSM("Hornet Nosk");
+            extraNoskHornetFSM.GetState("Set Pos").Actions[0] = new CustomFsmAction()
+            {
+                method = () => {
+                    meshHornet.enabled = true;
+                }
+            };
+            extraNoskHornetFSM.GetState("Init").Actions[8] = new CustomFsmAction()
+            {
+                method = () => {
+                    extraNoskHornetFSM.FsmVariables.FindFsmGameObject("Glob Dropper").Value = extraGlobDropper;
+                }
+            };
+            extraNoskHornetFSM.GetState("Globs").Actions[0] = new CustomFsmAction()
+            {
+                method = () => {
+                    extraGlobDropperFSM.SendEvent("DROP");
+                }
+            };
+            /*
+            extraNoskHornetFSM.GetState("Summon").Actions[1] = new CustomFsmAction()
+            {
+                method = () => {
+                    if (noskHornetFSM.FsmVariables.FindFsmInt("Enemy Count").Value >= 12)
+                    {
+                        noskHornetFSM.SendEvent("FINISHED");
+                    }
+                    else
+                    {
+                        noskHornetFSM.SendEvent("");
+                    }
+                }
+            };
+            noskHornetFSM.GetState("Summon").Actions[1] = new CustomFsmAction()
+            {
+                method = () => {
+                    if (noskHornetFSM.FsmVariables.FindFsmInt("Enemy Count").Value >= 12)
+                    {
+                        noskHornetFSM.SendEvent("FINISHED");
+                    }
+                    else
+                    {
+                        noskHornetFSM.SendEvent("");
+                    }
+                }
+            };
+            */
+            extraSubFSM.FsmVariables.FindFsmGameObject("Hornet Nosk").Value         = extraNoskHornet;
+            extraSubFSM.FsmVariables.FindFsmGameObject("Nosk Transform").Value      = extraTransform;
+            extraNoskHornetFSM.FsmVariables.FindFsmGameObject("Glob Dropper").Value = extraGlobDropper;
+
+        }
+        bool AllHornetNosksDead()
+        {
+            string[] HornetNosksNames = { "Hornet Nosk", "Hornet Nosk 2" };
+
+            return HornetNosksNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+
+        void Update()
+        {
+            if (AllHornetNosksDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0) // Log only if there are tracked bosses
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+            var balloonSpawners = GameObject.FindObjectsOfType<GameObject>()
+            .Where(go => go.name == "Enemy Pusher")
+            .ToArray();
+
+            Modding.Logger.Log($"Found {balloonSpawners.Length} balloon spawners");
+            
+            foreach (var spawner in balloonSpawners)
+            {
+                var buzDustSpawnerCol = spawner.GetComponent<CircleCollider2D>();
+                var colliderHornet = GameObject.Find("Hornet Nosk 2").GetComponent<Collider2D>();
+                var origHornetCollider = GameObject.Find("Hornet Nosk").GetComponent<Collider2D>();
+                Physics2D.IgnoreCollision(colliderHornet, buzDustSpawnerCol);
+                Physics2D.IgnoreCollision(origHornetCollider, buzDustSpawnerCol);
+                Modding.Logger.Log($"Ignoring collisions for spawner: {spawner.name}");
+            }
+            /*
+            var allColliders = FindObjectsOfType<CircleCollider2D>();
+            var allColliders2D = FindObjectsOfType<Collider2D>();
+            for (int i = 0; i < allColliders.Length; i++)
+            {
+                for (int j = i + 1; j < allColliders2D.Length; j++)
+                {
+                    var col1 = allColliders[i];
+                    var col2 = allColliders2D[j];
+
+                    if (col1 != null && col2 != null &&
+                        col1.enabled && col2.enabled &&
+                        col1.IsTouching(col2))
+                    {
+                        Modding.Logger.Log($"FRAME {Time.frameCount}: COLLISION - {col1.gameObject.name} <-> {col2.gameObject.name}");
+                    }
+                }
+            }*/
+
+
+
+        }
+
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
     class WatchersControl : MonoBehaviour
     {

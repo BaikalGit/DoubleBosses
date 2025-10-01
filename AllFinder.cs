@@ -38,6 +38,9 @@ namespace DoubleBosses
         { "GG_Hive_Knight", () => FindAndCreate<HiveKnightControl>("Hive Knight") },
         { "GG_Broken_Vessel", () => FindAndCreate<BrokenVesselControl>("Infected Knight") },
         { "GG_Lost_Kin", () => FindAndCreate<LostKinControl>("Lost Kin") },
+        { "GG_Nosk", () => FindAndCreate<NoskControl>("Mimic Spider") },
+        { "GG_Nosk_V", () => FindAndCreate<NoskVControl>("Mimic Spider") },
+        { "GG_Nosk_Hornet", () => FindAndCreate<NoskHornetControl>("Hornet Nosk") },
 
         };
 

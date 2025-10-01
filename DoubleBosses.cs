@@ -34,6 +34,8 @@ namespace DoubleBosses
     "Hive Knight", "Hive Knight 2",
     "Infected Knight", "Infected Knight 2",
     "Lost Kin", "Lost Kin 2",
+    "Mimic Spider", "Mimic Spider 2",
+    "Hornet Nosk", "Hornet Nosk 2",
         };
 
         public static Dictionary<string, bool> BossDeathStatus = new Dictionary<string, bool>();
