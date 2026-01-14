@@ -36,6 +36,9 @@ namespace DoubleBosses
     "Lost Kin", "Lost Kin 2",
     "Mimic Spider", "Mimic Spider 2",
     "Hornet Nosk", "Hornet Nosk 2",
+    "Jar Collector", "Jar Collector 2",
+    "Lancer", "Lancer 2","Lobster", "Lobster 2",
+    "Mega Zombie Beam Miner (1)", "Mega Zombie Beam Miner (1) 2",
         };
 
         public static Dictionary<string, bool> BossDeathStatus = new Dictionary<string, bool>();
@@ -81,7 +84,7 @@ namespace DoubleBosses
         private void LogCallStack(System.Diagnostics.StackTrace stackTrace)
         {
             Modding.Logger.Log("[Boss Reset] Call stack:");
-            for (int i = 0; i < Math.Min(stackTrace.FrameCount, 10); i++)
+            for (int i = 0; i < stackTrace.FrameCount; i++)
             {
                 var frame = stackTrace.GetFrame(i);
                 var method = frame.GetMethod();

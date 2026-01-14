@@ -41,6 +41,10 @@ namespace DoubleBosses
         { "GG_Nosk", () => FindAndCreate<NoskControl>("Mimic Spider") },
         { "GG_Nosk_V", () => FindAndCreate<NoskVControl>("Mimic Spider") },
         { "GG_Nosk_Hornet", () => FindAndCreate<NoskHornetControl>("Hornet Nosk") },
+        { "GG_Collector", () => FindAndCreate<CollectorControl>("Jar Collector") },
+        { "GG_Collector_V", () => FindAndCreate<CollectorVControl>("Jar Collector") },
+        { "GG_God_Tamer", () => FindAndCreate<TamerControl>("Lancer") },
+        { "GG_Crystal_Guardian", () => FindAndCreate<CGControl>("Mega Zombie Beam Miner (1)") },
 
         };
 

@@ -3,6 +3,8 @@ using HutongGames.PlayMaker;
 using HutongGames.PlayMaker.Actions;
 using Modding.Utils;
 using Osmi.Game;
+using Osmi.SimpleFSM;
+using Satchel;
 using Steamworks;
 using System.Collections;
 using System.Globalization;
@@ -10,6 +12,7 @@ using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.Assertions.Must;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 using static UnityEngine.UI.GridLayoutGroup;
 
 
@@ -2427,6 +2430,465 @@ namespace DoubleBosses
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    class CollectorControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 77.33f, 4.4f),
+        };
+        List<GameObject> Collectors;
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            Collectors = new[] { GameObject.Find("Jar Collector") }.ToList();
+            GameObject[] extraCollectors = extrasInfo
+                .Map(info => {
+                    GameObject prefab = Collectors[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = prefab.transform.GetPositionX(), y = prefab.transform.GetPositionY() };
+                    extra.name = prefab.name + " " + info.num;
+                    return extra;
+                })
+                .ToArray();
+            Collectors.AddRange(extraCollectors);
+        }
+        bool AllCollectorsDead()
+        {
+            string[] CollectorsNames = { "Jar Collector", "Jar Collector 2" };
+
+            return CollectorsNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+
+        void Update()
+        {
+            if (AllCollectorsDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0) // Log only if there are tracked bosses
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+        }
+
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class CollectorVControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 77.33f, 4.4f),
+        };
+        List<GameObject> CollectorsV;
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            CollectorsV = new[] { GameObject.Find("Jar Collector") }.ToList();
+            GameObject[] extraCollectors = extrasInfo
+                .Map(info => {
+                    GameObject prefab = CollectorsV[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = prefab.transform.GetPositionX(), y = prefab.transform.GetPositionY() };
+                    extra.name = prefab.name + " " + info.num;
+                    return extra;
+                })
+                .ToArray();
+            CollectorsV.AddRange(extraCollectors);
+            CollectorsV.ShareHealth(0, "Collectors");
+
+
+            StartCoroutine(InitHP());
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Jar Collector").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Jar Collector 2").GetComponent<HealthManager>().hp = 99999;
+        }
+        bool AllCollectorsVDead()
+        {
+            string[] CollectorsVNames = { "Jar Collector", "Jar Collector 2" };
+
+            return CollectorsVNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+
+        void Update()
+        {
+            if (AllCollectorsVDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0) // Log only if there are tracked bosses
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+        }
+
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class TamerControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 90.36f, 6.5f),
+        };
+        List<GameObject> Lancers;
+        PlayMakerFSM Lancer1FSMControl;
+        PlayMakerFSM Lancer2FSMControl;
+
+        PlayMakerFSM Lancer1FSMDeath;
+        PlayMakerFSM Lancer2FSMDeath;
+
+        bool doneCorpse = false;
+
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            Lancers = new[] { GameObject.Find("Lancer") }.ToList();
+            GameObject[] extraLancers = extrasInfo
+                .Map(info => {
+                    GameObject prefab = Lancers[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = info.x, y = prefab.transform.GetPositionY() };
+                    extra.name = prefab.name + " " + info.num;
+                    return extra;
+                })
+                .ToArray();
+            Lancers.AddRange(extraLancers);
+            GameObject prefabLobster = GameObject.Find("Lobster");
+            GameObject extraLobster = GameObject.Instantiate(prefabLobster);
+            extraLobster.name = prefabLobster.name + " 2";
+            extraLobster.transform.position = prefabLobster.transform.position with { x = 90.36f, y = prefabLobster.transform.GetPositionY() };
+
+            Lancer1FSMControl = Lancers[0].LocateMyFSM("Control");
+            Lancer2FSMControl = Lancers[1].LocateMyFSM("Control");
+
+            Lancer1FSMDeath = Lancers[0].LocateMyFSM("Death Detect");
+            Lancer2FSMDeath = Lancers[1].LocateMyFSM("Death Detect");
+
+            PlayMakerFSM extraLobsterFSM = extraLobster.LocateMyFSM("Control");
+            extraLobsterFSM.SendEvent("WAKE");
+            var deathEffects = prefabLobster.GetComponentInChildren<EnemyDeathEffects>(true);
+            Modding.Logger.Log($"{deathEffects}");
+            var rootType = deathEffects.GetType();
+            var corpse = (GameObject)rootType.GetField("corpse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(deathEffects);
+            Modding.Logger.Log($"{corpse}");
+            if (corpse != null)
+            {
+                Modding.Logger.Log($"We got into Corpse!");
+                PlayMakerFSM corpseFSM = corpse.LocateMyFSM("Death");
+                corpseFSM.DisableAction("Init", 9);
+                corpseFSM.DisableAction("Init", 8);
+                corpseFSM.DisableAction("Init", 6);
+
+                corpseFSM.DisableAction("Steam", 11);
+                corpseFSM.DisableAction("Steam", 10);
+                corpseFSM.DisableAction("Steam", 6);
+                corpseFSM.DisableAction("Steam", 5);
+                corpseFSM.DisableAction("Steam", 4);
+                corpseFSM.DisableAction("Steam", 2);
+                corpseFSM.DisableAction("Steam", 1);
+
+                corpseFSM.DisableAction("Ready", 2);
+                corpseFSM.DisableAction("Ready", 1);
+
+                corpseFSM.DisableAction("Blow",  10);
+                corpseFSM.DisableAction("Blow",  9);
+                corpseFSM.DisableAction("Blow",  8);
+                corpseFSM.DisableAction("Blow",  7);
+                corpseFSM.DisableAction("Blow",  6);
+                corpseFSM.DisableAction("Blow",  4);
+                corpseFSM.DisableAction("Blow",  2);
+                Modding.Logger.Log($"We done doin the Corpse!!!!");
+            }
+            Lancer2FSMControl.GetState("Init").Actions[6] = new CustomFsmAction()
+            {
+                method = () => Lancer2FSMControl.FsmVariables.FindFsmGameObject("Lobster").Value = extraLobster
+            };
+
+            Lancer1FSMDeath.GetState("Set").Actions = new HutongGames.PlayMaker.FsmStateAction[]
+            {
+                new CustomFsmAction()
+                {
+                    method = () => {
+                        DoubleBosses.BossDeathStatus["Lancer"] = true;
+                        Lancer1FSMControl.FsmVariables.FindFsmBool("Death").Value = true;
+                        //Lancers[0].LocateMyFSM("recoil").FsmVariables.FindFsmInt("Recoil per second").Value = 0;
+                    }
+                }
+            };
+            Lancer2FSMDeath.GetState("Set").Actions = new HutongGames.PlayMaker.FsmStateAction[]
+            {
+                new CustomFsmAction()
+                {
+                    method = () => {
+                        DoubleBosses.BossDeathStatus["Lancer 2"] = true;
+                        Lancer2FSMControl.FsmVariables.FindFsmBool("Death").Value = true;
+                        //Lancers[1].LocateMyFSM("recoil").FsmVariables.FindFsmInt("Recoil per second").Value = 0;
+                    }
+                }
+            };
+
+            /*
+            Lancer1FSMDeath.RemoveAction("Set", 1);
+            Lancer1FSMDeath.RemoveAction("Set", 0);
+            Lancer2FSMDeath.RemoveAction("Set", 1);
+            Lancer2FSMDeath.RemoveAction("Set", 0);
+            */
+        }
+        bool AllLancersDead()
+        {
+            string[] LancersNames = { "Lancer", "Lancer 2", "Lobster", "Lobster 2" };
+
+            return LancersNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+
+        void Update()
+        {
+            if (AllLancersDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0)
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+            if (doneCorpse != true)
+            {
+                var deathEffects2 = GameObject.Find("Lobster 2").GetComponentInChildren<EnemyDeathEffects>(true);
+                Modding.Logger.Log($"{deathEffects2}");
+                var rootType2 = deathEffects2.GetType();
+
+                var corpse2 = (GameObject)rootType2.GetField("corpse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(deathEffects2);
+                Modding.Logger.Log($"{corpse2}");
+                if (corpse2 != null)
+                {
+                    Modding.Logger.Log($"We got into Corpse!");
+                    PlayMakerFSM corpseFSM2 = corpse2.LocateMyFSM("Death");
+                    corpseFSM2.DisableAction("Init", 9);
+                    corpseFSM2.DisableAction("Init", 8);
+                    corpseFSM2.DisableAction("Init", 6);
+
+                    corpseFSM2.DisableAction("Steam", 11);
+                    corpseFSM2.DisableAction("Steam", 10);
+                    corpseFSM2.DisableAction("Steam", 6);
+                    corpseFSM2.DisableAction("Steam", 5);
+                    corpseFSM2.DisableAction("Steam", 4);
+                    corpseFSM2.DisableAction("Steam", 2);
+                    corpseFSM2.DisableAction("Steam", 1);
+
+                    corpseFSM2.DisableAction("Ready", 2);
+                    corpseFSM2.DisableAction("Ready", 1);
+
+                    corpseFSM2.DisableAction("Blow", 10);
+                    corpseFSM2.DisableAction("Blow", 9);
+                    corpseFSM2.DisableAction("Blow", 8);
+                    corpseFSM2.DisableAction("Blow", 7);
+                    corpseFSM2.DisableAction("Blow", 6);
+                    corpseFSM2.DisableAction("Blow", 4);
+                    corpseFSM2.DisableAction("Blow", 2);
+                    Modding.Logger.Log($"We done doin the Corpse!!!!");
+                    doneCorpse = true;
+                }
+            }
+            if (DoubleBosses.BossDeathStatus.TryGetValue("Lobster", out bool isDead) && isDead) { Lancer1FSMDeath.SetState("Set"); }
+            if (DoubleBosses.BossDeathStatus.TryGetValue("Lobster 2", out bool isDead2) && isDead2) { Lancer2FSMDeath.SetState("Set"); }
+        }
+
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class CGControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 94.84f, 20.43f),
+        };
+        List<GameObject> CGs;
+        List<PlayMakerFSM> firstLasers;
+        List<PlayMakerFSM> secondLasers;
+        PlayMakerFSM CG1fsm;
+        PlayMakerFSM CG2fsm;
+        void Start()
+        {
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+
+            CGs = new[] { GameObject.Find("Mega Zombie Beam Miner (1)") }.ToList();
+            GameObject[] extraCG = extrasInfo
+            .Map(info => {
+                GameObject prefab = CGs[info.prefab];
+                var extra = GameObject.Instantiate(prefab);
+                extra.transform.position = prefab.transform.position with { x = prefab.transform.position.x - 15f, y = prefab.transform.position.y };
+                extra.transform.SetScaleX(-1);
+                extra.name = "Mega Zombie Beam Miner (1)" + " " + info.num;
+                return extra;
+            })
+            .ToArray();
+            CGs.AddRange(extraCG);
+            CG1fsm = CGs[0].LocateMyFSM("Beam Miner");
+            CG2fsm = CGs[1].LocateMyFSM("Beam Miner");
+            GameObject beamTurret1 = GameObject.Find("Laser Turret Mega (1)");
+            GameObject beamTurret2 = GameObject.Find("Laser Turret Mega (2)");
+            GameObject beamTurret3 = GameObject.Find("Laser Turret Mega (3)");
+            GameObject beamTurret4 = GameObject.Find("Laser Turret Mega (4)");
+            firstLasers = new[] { beamTurret1.LocateMyFSM("Laser Bug Mega"), beamTurret2.LocateMyFSM("Laser Bug Mega"), beamTurret3.LocateMyFSM("Laser Bug Mega"), beamTurret4.LocateMyFSM("Laser Bug Mega") }.ToList();
+
+            GameObject beamTurret5 = GameObject.Instantiate(beamTurret1);
+            beamTurret5.name = "Laser Turret Mega (5)";
+            beamTurret5.transform.position = beamTurret1.transform.position with { x = beamTurret1.transform.position.x + 1, y = beamTurret1.transform.position.y };
+
+            GameObject beamTurret6 = GameObject.Instantiate(beamTurret2);
+            beamTurret6.name = "Laser Turret Mega (6)";
+            beamTurret6.transform.position = beamTurret2.transform.position with { x = beamTurret2.transform.position.x + 1, y = beamTurret2.transform.position.y };
+
+            GameObject beamTurret7 = GameObject.Instantiate(beamTurret3);
+            beamTurret7.name = "Laser Turret Mega (7)";
+            beamTurret7.transform.position = beamTurret3.transform.position with { x = beamTurret3.transform.position.x + 1, y = beamTurret3.transform.position.y };
+
+            GameObject beamTurret8 = GameObject.Instantiate(beamTurret4);
+            beamTurret8.name = "Laser Turret Mega (8)";
+            beamTurret8.transform.position = beamTurret4.transform.position with { x = beamTurret4.transform.position.x + 1, y = beamTurret4.transform.position.y };
+            secondLasers = new[] { beamTurret5.LocateMyFSM("Laser Bug Mega"), beamTurret6.LocateMyFSM("Laser Bug Mega"), beamTurret7.LocateMyFSM("Laser Bug Mega"), beamTurret8.LocateMyFSM("Laser Bug Mega") }.ToList();
+
+
+            CG1fsm.GetState("Lasers").Actions[0] = new CustomFsmAction()
+            {
+                method = () => {
+                    turnOnFirstLasers();
+                }
+            };
+
+            CG2fsm.GetState("Lasers").Actions[0] = new CustomFsmAction()
+            {
+                method = () => {
+                    turnOnSecondLasers();
+                }
+            };
+            CG2fsm.RemoveAction("Roar",5);
+            CG2fsm.RemoveAction("Roar",4);
+
+            GameObject extraBeam = GameObject.Instantiate(beamTurret1.transform.Find("Beam").gameObject);
+            GameObject extraBeamBall = GameObject.Instantiate(beamTurret1.transform.Find("Beam Ball").gameObject);
+            GameObject extraBeamImpact = GameObject.Instantiate(beamTurret1.transform.Find("Beam Impact").gameObject);
+
+            CG2fsm.FsmVariables.FindFsmGameObject("Beam Ball").Value = extraBeamBall;
+            CG2fsm.FsmVariables.FindFsmGameObject("Beam").Value = extraBeam;
+            CG2fsm.FsmVariables.FindFsmGameObject("Beam Impact").Value = extraBeamImpact;
+        }
+        bool AllCGDead()
+        {
+            string[] CGNames = { "Mega Zombie Beam Miner (1)", "Mega Zombie Beam Miner (1) 2"};
+            return CGNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+
+        void Update()
+        {
+            if (AllCGDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+        }
+
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+
+        protected virtual void turnOnFirstLasers()
+        {
+            for(int i = 0; i<4;i++)
+            {
+                firstLasers[i].SetState("Aim");
+            }
+        }
+        protected virtual void turnOnSecondLasers()
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                secondLasers[i].SetState("Aim");
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     class WatchersControl : MonoBehaviour
     {
@@ -2646,6 +3108,10 @@ namespace DoubleBosses
         }
     }
 
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
     class FooControl : MonoBehaviour
     {
         void Start()
