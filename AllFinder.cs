@@ -45,7 +45,9 @@ namespace DoubleBosses
         { "GG_Collector_V", () => FindAndCreate<CollectorVControl>("Jar Collector") },
         { "GG_God_Tamer", () => FindAndCreate<TamerControl>("Lancer") },
         { "GG_Crystal_Guardian", () => FindAndCreate<CGControl>("Mega Zombie Beam Miner (1)") },
-
+        { "GG_Crystal_Guardian_2", () => FindAndCreate<enragedCGControl>("Zombie Beam Miner Rematch") },
+        { "GG_Uumuu", () => FindAndCreate<uumuuControl>("Mega Jellyfish GG") },
+        { "GG_Uumuu_V", () => FindAndCreate<uumuuControl>("Mega Jellyfish GG") },
         };
 
             if (sceneHandlers.TryGetValue(arg1.name, out var handler))

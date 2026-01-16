@@ -39,6 +39,8 @@ namespace DoubleBosses
     "Jar Collector", "Jar Collector 2",
     "Lancer", "Lancer 2","Lobster", "Lobster 2",
     "Mega Zombie Beam Miner (1)", "Mega Zombie Beam Miner (1) 2",
+    "Zombie Beam Miner Rematch", "Zombie Beam Miner Rematch 2",
+    "Mega Jellyfish GG", "Mega Jellyfish GG 2",
         };
 
         public static Dictionary<string, bool> BossDeathStatus = new Dictionary<string, bool>();

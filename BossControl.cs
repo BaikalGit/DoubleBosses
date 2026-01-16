@@ -2890,6 +2890,189 @@ namespace DoubleBosses
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
     //-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    class enragedCGControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 94.84f, 20.43f),
+        };
+        List<GameObject> eCGs;
+        void Start()
+        {
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            
+            eCGs = new[] { GameObject.Find("Zombie Beam Miner Rematch") }.ToList();
+            GameObject[] extraCG = extrasInfo
+            .Map(info => {
+                GameObject prefab = eCGs[info.prefab];
+                var extra = GameObject.Instantiate(prefab);
+                extra.transform.position = prefab.transform.position with { x = prefab.transform.position.x - 15f, y = prefab.transform.position.y };
+                extra.transform.SetScaleX(-1);
+                extra.name = "Zombie Beam Miner Rematch" + " " + info.num;
+                return extra;
+            })
+            .ToArray();
+            eCGs.AddRange(extraCG);
+            PlayMakerFSM eCG1fsm = eCGs[0].LocateMyFSM("Beam Miner");
+            PlayMakerFSM eCG2fsm = eCGs[1].LocateMyFSM("Beam Miner");
+            GameObject beamTurret1 = GameObject.Find("Laser Turret Mega (1)");
+            GameObject beamTurret2 = GameObject.Find("Laser Turret Mega (2)");
+            GameObject beamTurret3 = GameObject.Find("Laser Turret Mega (3)");
+            GameObject beamTurret4 = GameObject.Find("Laser Turret Mega");
+            GameObject beamTurret5 = GameObject.Instantiate(beamTurret1);
+            beamTurret5.name = "Laser Turret Mega (5)";
+            beamTurret5.transform.position = beamTurret1.transform.position with { x = beamTurret1.transform.position.x + 1, y = beamTurret1.transform.position.y };
+
+            GameObject beamTurret6 = GameObject.Instantiate(beamTurret2);
+            beamTurret6.name = "Laser Turret Mega (6)";
+            beamTurret6.transform.position = beamTurret2.transform.position with { x = beamTurret2.transform.position.x + 1, y = beamTurret2.transform.position.y };
+
+            GameObject beamTurret7 = GameObject.Instantiate(beamTurret3);
+            beamTurret7.name = "Laser Turret Mega (7)";
+            beamTurret7.transform.position = beamTurret3.transform.position with { x = beamTurret3.transform.position.x + 1, y = beamTurret3.transform.position.y };
+
+            GameObject beamTurret8 = GameObject.Instantiate(beamTurret4);
+            beamTurret8.name = "Laser Turret Mega (8)";
+            beamTurret8.transform.position = beamTurret4.transform.position with { x = beamTurret4.transform.position.x + 1, y = beamTurret4.transform.position.y };
+
+            eCG2fsm.RemoveAction("Roar", 5);
+            eCG2fsm.RemoveAction("Roar", 4);
+
+            GameObject extraBeam = GameObject.Instantiate(beamTurret1.transform.Find("Beam").gameObject);
+            GameObject extraBeamBall = GameObject.Instantiate(beamTurret1.transform.Find("Beam Ball").gameObject);
+            GameObject extraBeamImpact = GameObject.Instantiate(beamTurret1.transform.Find("Beam Impact").gameObject);
+
+            eCG2fsm.FsmVariables.FindFsmGameObject("Beam Ball").Value = extraBeamBall;
+            eCG2fsm.FsmVariables.FindFsmGameObject("Beam").Value = extraBeam;
+            eCG2fsm.FsmVariables.FindFsmGameObject("Beam Impact").Value = extraBeamImpact;
+        }
+        bool AllECGDead()
+        {
+            string[] eCGNames = { "Zombie Beam Miner Rematch", "Zombie Beam Miner Rematch 2" };
+            return eCGNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+
+        void Update()
+        {
+            if (AllECGDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+        }
+
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class uumuuControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 90.36f, 6.5f),
+        };
+        List<GameObject> uumie;
+        PlayMakerFSM uumuu1FSM;
+        PlayMakerFSM uumuu2FSM;
+        GameObject multizapsExtra;
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            uumie = new[] { GameObject.Find("Mega Jellyfish GG") }.ToList();
+            GameObject[] extraUumuu = extrasInfo
+                .Map(info => {
+                    GameObject prefab = uumie[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = prefab.transform.position.x + 5f, y = prefab.transform.GetPositionY() };
+                    extra.name = prefab.name + " " + info.num;
+                    return extra;
+                })
+                .ToArray();
+            uumie.AddRange(extraUumuu);
+            PlayMakerFSM bScene = GameObject.Find("Battle Scene").LocateMyFSM("Control");
+            bScene.RemoveAction("End", 2);
+            bScene.RemoveAction("End", 0);
+
+            //HutongGames.PlayMaker.Actions.FaceObject();
+            uumuu1FSM = uumie[0].LocateMyFSM("Mega Jellyfish");
+            uumuu2FSM = uumie[1].LocateMyFSM("Mega Jellyfish");
+            uumuu2FSM.SetState("Wake Pause");
+            
+            multizapsExtra = GameObject.Instantiate(GameObject.Find("Mega Jellyfish Multizaps"));
+            MeshRenderer enterSpriteRenderer = uumie[1].transform.Find("Entry Sprite").gameObject.GetComponent<MeshRenderer>();
+            uumuu2FSM.GetState("Init").Actions[1] = new CustomFsmAction()
+            {
+                method = () => {
+                    uumuu2FSM.FsmVariables.FindFsmGameObject("Multizaps").Value = multizapsExtra;
+                }
+            };
+            uumuu2FSM.GetState("Start").Actions[4] = new CustomFsmAction()
+            {
+                method = () => {
+                    enterSpriteRenderer.enabled = false;    
+                }
+            };
+        }
+        bool AllUumieDead()
+        {
+            string[] UumuuNames = { "Mega Jellyfish GG", "Mega Jellyfish GG 2"};
+
+            return UumuuNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+        void Update()
+        {
+            if (AllUumieDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0)
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+            //Modding.Logger.Log($"Current state of the uumu is: {uumuu2FSM.ActiveStateName}");
+            Modding.Logger.Log($"Pattern is: {uumuu2FSM.FsmVariables.FindFsmGameObject("Multizaps").Value}");
+            uumuu2FSM.FsmVariables.FindFsmGameObject("Multizaps").Value = multizapsExtra;
+        }
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
     class WatchersControl : MonoBehaviour
     {
         bool alreadyDone1 = false;
