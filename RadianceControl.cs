@@ -1,4 +1,5 @@
-﻿using System;
+﻿// The whole code in this file is by ygsbzr
+using System;
 using System.Collections;
 using System.Linq;
 using System.Text;

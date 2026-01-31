@@ -3013,7 +3013,7 @@ namespace DoubleBosses
             bScene.RemoveAction("End", 2);
             bScene.RemoveAction("End", 0);
 
-            //HutongGames.PlayMaker.Actions.FaceObject();
+            //HutongGames.PlayMaker.Actions.SetPolygonCollider();
             uumuu1FSM = uumie[0].LocateMyFSM("Mega Jellyfish");
             uumuu2FSM = uumie[1].LocateMyFSM("Mega Jellyfish");
             uumuu2FSM.SetState("Wake Pause");
@@ -3054,6 +3054,406 @@ namespace DoubleBosses
             //Modding.Logger.Log($"Current state of the uumu is: {uumuu2FSM.ActiveStateName}");
             Modding.Logger.Log($"Pattern is: {uumuu2FSM.FsmVariables.FindFsmGameObject("Multizaps").Value}");
             uumuu2FSM.FsmVariables.FindFsmGameObject("Multizaps").Value = multizapsExtra;
+        }
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class TLControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 90.36f, 6.5f),
+        };
+        List<GameObject> traitors;
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            traitors = new[] { GameObject.Find("Mantis Traitor Lord") }.ToList();
+            GameObject[] extraTraitor = extrasInfo
+                .Map(info => {
+                    GameObject prefab = traitors[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = prefab.transform.position.x - 15f, y = prefab.transform.GetPositionY() };
+                    extra.name = prefab.name + " " + info.num;
+                    return extra;
+                })
+                .ToArray();
+            traitors.AddRange(extraTraitor);
+            PlayMakerFSM bScene = GameObject.Find("Battle Scene").LocateMyFSM("Battle Control");
+            bScene.RemoveAction("End", 4);
+            bScene.RemoveAction("End", 1);
+        }
+        bool AllTraitorsDead()
+        {
+            string[] UumuuNames = { "Mantis Traitor Lord", "Mantis Traitor Lord 2" };
+
+            return UumuuNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+        void Update()
+        {
+            if (AllTraitorsDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0)
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+        }
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class GPControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 90.36f, 6.5f),
+        };
+        List<GameObject> princes;
+        PlayMakerFSM GPFSM2;
+        GameObject extraTink;
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            princes = new[] { GameObject.Find("Grey Prince") }.ToList();
+            GameObject[] extraPrince = extrasInfo
+                .Map(info => {
+                    GameObject prefab = princes[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = prefab.transform.position.x - 15f, y = prefab.transform.GetPositionY() };
+                    extra.name = prefab.name + " " + info.num;
+                    return extra;
+                })
+                .ToArray();
+            princes.AddRange(extraPrince);
+            GPFSM2 = princes[1].LocateMyFSM("Control");
+
+            GameObject chargeTink = GameObject.Find("Charge Tink");
+            extraTink  = GameObject.Instantiate(chargeTink);
+            GPFSM2.GetState("Init").Actions[10] = new CustomFsmAction() 
+            {
+                method = () => {
+                    GPFSM2.FsmVariables.FindFsmGameObject("Charge Tink").Value = extraTink;
+                }
+            };
+        }
+        bool AllPrincesDead()
+        {
+            string[] PrincesNames = { "Grey Prince", "Grey Prince 2" };
+
+            return PrincesNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+        void Update()
+        {
+            if (AllPrincesDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0)
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+            Modding.Logger.Log($"Current state of Grey Prince is: {GPFSM2.ActiveStateName}");
+            GPFSM2.FsmVariables.FindFsmGameObject("Charge Tink").Value = extraTink;
+        }
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class PVControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 90.36f, 6.5f),
+        };
+        List<GameObject> vessels;
+        PlayMakerFSM vesselFSM;
+        PlayMakerFSM vessel2FSM;
+        bool doneCorpse = false;
+        List<PlayMakerFSM> burstsFSM;
+        List<GameObject> bursts;
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            vessels = new[] { GameObject.Find("HK Prime") }.ToList();
+            GameObject[] extraVessel = extrasInfo
+                .Map(info => {
+                    GameObject prefab = vessels[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = prefab.transform.position.x - 15f, y = prefab.transform.GetPositionY() };
+                    extra.name = prefab.name + " " + info.num;
+                    extra.transform.SetScaleX(-1);
+                    return extra;
+                })
+                .ToArray();
+            vessels.AddRange(extraVessel);
+            vesselFSM = vessels[0].LocateMyFSM("Control");
+            vessel2FSM = vessels[1].LocateMyFSM("Control");
+            if (Modding.ModHooks.ModEnabled("QoL")) // I might be the only one in the world who actually used this feature
+            {
+                PlayMakerFSM control = vessels[1].LocateMyFSM("Control");
+                Modding.Logger.Log("Working inside QoL");
+                //control.GetState("Init").ChangeTransition("FINISHED", "Intro Roar");
+
+                ((HutongGames.PlayMaker.Actions.Wait)control.GetState("Intro 2").Actions[3]).time = 0.01f;
+                ((HutongGames.PlayMaker.Actions.Wait)control.GetState("Intro 1").Actions[0]).time = 0.01f;
+                ((HutongGames.PlayMaker.Actions.Wait)control.GetState("Intro Roar").Actions[7]).time = 1f;
+                //HutongGames.PlayMaker.Actions.Wait;
+            }
+            var deathEffects = vessels[0].GetComponentInChildren<EnemyDeathEffects>(true);
+            Modding.Logger.Log($"{deathEffects}");
+            var rootType = deathEffects.GetType();
+            var corpse = (GameObject)rootType.GetField("corpse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(deathEffects);
+            if (corpse != null)
+            {
+                Modding.Logger.Log($"We got into Corpse!");
+                PlayMakerFSM corpseFSM = corpse.LocateMyFSM("corpse");
+                corpseFSM.DisableAction("Music", 4);
+                corpseFSM.DisableAction("Music", 3);
+                corpseFSM.DisableAction("Music",0);
+
+                corpseFSM.DisableAction("End Scene",0);
+            }
+
+            vessel2FSM.RemoveAction("Init", 63);
+            GameObject extraFocusBlast1 = GameObject.Instantiate(GameObject.Find("HK Prime Blast"));
+            extraFocusBlast1.name = "HK Prime Blast (6)";
+
+            GameObject extraFocusBlast2 = GameObject.Instantiate(GameObject.Find("HK Prime Blast (1)"));
+            extraFocusBlast2.name = "HK Prime Blast (7)";
+            GameObject extraFocusBlast3 = GameObject.Instantiate(GameObject.Find("HK Prime Blast (2)"));
+            extraFocusBlast3.name = "HK Prime Blast (8)";
+            GameObject extraFocusBlast4 = GameObject.Instantiate(GameObject.Find("HK Prime Blast (3)"));
+            extraFocusBlast4.name = "HK Prime Blast (9)";
+            GameObject extraFocusBlast5 = GameObject.Instantiate(GameObject.Find("HK Prime Blast (4)"));
+            extraFocusBlast5.name = "HK Prime Blast (10)";
+            GameObject extraFocusBlast6 = GameObject.Instantiate(GameObject.Find("HK Prime Blast (5)"));
+            extraFocusBlast6.name = "HK Prime Blast (11)";
+            burstsFSM = new[] { extraFocusBlast1.LocateMyFSM("Control"), extraFocusBlast2.LocateMyFSM("Control"), extraFocusBlast3.LocateMyFSM("Control"), extraFocusBlast4.LocateMyFSM("Control"), extraFocusBlast5.LocateMyFSM("Control"), extraFocusBlast6.LocateMyFSM("Control") }.ToList();
+            bursts = new[] { extraFocusBlast1, extraFocusBlast2, extraFocusBlast3, extraFocusBlast4, extraFocusBlast5, extraFocusBlast6 }.ToList();
+            
+            for(int i = 0; i < 6; i++)
+            {
+                burstsFSM[i].FsmVariables.FindFsmGameObject("Blast").Value = GameObject.Instantiate(bursts[i].transform.Find("Blast").gameObject);
+            }
+
+
+
+
+
+
+            vessel2FSM.GetState("Focus Burst").Actions[0] = new CustomFsmAction()
+            {
+                method = () => {
+                    turnOnBursts();
+                }
+            };
+        }
+        bool AllVesselsDead()
+        {
+            string[] VesselNames = { "HK Prime", "HK Prime 2" };
+
+            return VesselNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+        void Update()
+        {
+            if (AllVesselsDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0)
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+            if (doneCorpse != true)
+            {
+                var deathEffects2 = vessels[1].GetComponentInChildren<EnemyDeathEffects>(true);
+                Modding.Logger.Log($"{deathEffects2}");
+                var rootType2 = deathEffects2.GetType();
+
+                var corpse2 = (GameObject)rootType2.GetField("corpse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(deathEffects2);
+                Modding.Logger.Log($"{corpse2}");
+                if (corpse2 != null)
+                {
+                    Modding.Logger.Log($"We got into Corpse!2");
+                    PlayMakerFSM corpseFSM2 = corpse2.LocateMyFSM("corpse");
+                    corpseFSM2.DisableAction("Music", 4);
+                    corpseFSM2.DisableAction("Music", 3);
+                    corpseFSM2.DisableAction("Music", 0);
+
+                    corpseFSM2.DisableAction("End Scene", 0);
+                    doneCorpse = true;
+                }
+            }
+        }
+
+        void OnDestroy()
+        {
+            foreach (string bossName in DoubleBosses.trackedBosses)
+            {
+                if (DoubleBosses.BossDeathStatus.TryGetValue(bossName, out _))
+                {
+                    DoubleBosses.BossDeathStatus[bossName] = false;
+                    Modding.Logger.Log($"[Boss Reset] {bossName} status reset to false.");
+                }
+            }
+        }
+        protected virtual void turnOnBursts()
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                burstsFSM[i].SetState("Wait");
+                var blast = burstsFSM[i].FsmVariables.FindFsmGameObject("Blast").Value;
+                //i totally stole this code from @hien-ngo29 in github, he made a Hollow Knight usable skill for the knight.
+                Vector3 pos = new();
+                Vector3 heroPos = HeroController.instance.gameObject.transform.position;
+                pos.x = heroPos.x - 20 + (8 * i) + UnityEngine.Random.Range(-1.5f, 1.5f);
+                pos.y = 6.4f + (i % 2 != 0 ? UnityEngine.Random.Range(11.88f, 14.08f) : UnityEngine.Random.Range(7.88f, 10.08f)) - 7f;
+                blast.transform.position = pos;
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------
+    class NGControl : MonoBehaviour
+    {
+        internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
+            (2, 0, 90.36f, 6.5f),
+        };
+        List<GameObject> grimms;
+        PlayMakerFSM grimmFSM;
+        PlayMakerFSM grimm2FSM;
+        void Start()
+        {
+
+            if (BossSequenceController.IsInSequence)
+            {
+                return;
+            }
+            Modding.Logger.Log($"Hello! I exist! ==============================================================================");
+            grimms = new[] { GameObject.Find("Grimm Control") }.ToList();
+            GameObject[] extraGrimm = extrasInfo
+                .Map(info => {
+                    GameObject prefab = grimms[info.prefab];
+                    var extra = GameObject.Instantiate(prefab);
+                    extra.transform.position = prefab.transform.position with { x = prefab.transform.position.x - 15f, y = prefab.transform.GetPositionY() };
+                    extra.name = prefab.name + " " + info.num;
+                    extra.transform.Find("Nightmare Grimm Boss").gameObject.name = "Nightmare Grimm Boss 2";
+                    return extra;
+                })
+                .ToArray();
+            grimms.AddRange(extraGrimm);
+            grimmFSM = grimms[0].LocateMyFSM("Control");
+            grimm2FSM = grimms[1].LocateMyFSM("Control");
+            grimmFSM.RemoveAction("End", 0);
+            grimm2FSM.RemoveAction("End", 0);
+            grimmFSM.RemoveAction("State 1",0);
+            grimm2FSM.RemoveAction("State 1",0);
+            PlayMakerFSM grimmActual1FSM = GameObject.Find("Nightmare Grimm Boss").LocateMyFSM("Control");
+            PlayMakerFSM grimmActual2FSM = GameObject.Find("Nightmare Grimm Boss 2").LocateMyFSM("Control");
+
+            grimmActual1FSM.GetState("Send NPC Event").Actions = new HutongGames.PlayMaker.FsmStateAction[]
+            {
+                new CustomFsmAction()
+                {
+                    method = () => {
+                        DoubleBosses.BossDeathStatus["Nightmare Grimm Boss"] = true;
+                    }
+                }
+            };
+            grimmActual2FSM.GetState("Send NPC Event").Actions = new HutongGames.PlayMaker.FsmStateAction[]
+            {
+                new CustomFsmAction()
+                {
+                    method = () => {
+                        DoubleBosses.BossDeathStatus["Nightmare Grimm Boss 2"] = true;
+                    }
+                }
+            };
+            ((HutongGames.PlayMaker.Actions.FindChild)grimm2FSM.GetState("Init").Actions[11]).childName = "Nightmare Grimm Boss 2";
+        }
+        bool AllGrimmsDead()
+        {
+            string[] VesselNames = { "Nightmare Grimm Boss", "Nightmare Grimm Boss 2" };
+
+            return VesselNames.All(name => DoubleBosses.BossDeathStatus.TryGetValue(name, out bool isDead) && isDead);
+        }
+        void Update()
+        {
+            if (AllGrimmsDead())
+            {
+                BossSceneController.Instance.EndBossScene();
+            }
+
+            if (DoubleBosses.BossDeathStatus.Count > 0)
+            {
+                Modding.Logger.Log("Boss Death Status:\n" +
+                                    string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
         }
 
         void OnDestroy()

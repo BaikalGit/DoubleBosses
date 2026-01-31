@@ -48,6 +48,10 @@ namespace DoubleBosses
         { "GG_Crystal_Guardian_2", () => FindAndCreate<enragedCGControl>("Zombie Beam Miner Rematch") },
         { "GG_Uumuu", () => FindAndCreate<uumuuControl>("Mega Jellyfish GG") },
         { "GG_Uumuu_V", () => FindAndCreate<uumuuControl>("Mega Jellyfish GG") },
+        { "GG_Traitor_Lord", () => FindAndCreate<TLControl>("Mantis Traitor Lord") },
+        { "GG_Grey_Prince_Zote", () => FindAndCreate<GPControl>("Grey Prince") },
+        { "GG_Hollow_Knight", () => FindAndCreate<PVControl>("HK Prime") },
+        { "GG_Grimm_Nightmare", () => FindAndCreate<NGControl>("Grimm Control") },
         };
 
             if (sceneHandlers.TryGetValue(arg1.name, out var handler))

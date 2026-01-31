@@ -41,6 +41,10 @@ namespace DoubleBosses
     "Mega Zombie Beam Miner (1)", "Mega Zombie Beam Miner (1) 2",
     "Zombie Beam Miner Rematch", "Zombie Beam Miner Rematch 2",
     "Mega Jellyfish GG", "Mega Jellyfish GG 2",
+    "Mantis Traitor Lord", "Mantis Traitor Lord 2",
+    "Grey Prince", "Grey Prince 2",
+    "HK Prime", "HK Prime 2",
+    "Nightmare Grimm Boss", "Nightmare Grimm Boss 2",
         };
 
         public static Dictionary<string, bool> BossDeathStatus = new Dictionary<string, bool>();
@@ -56,6 +60,7 @@ namespace DoubleBosses
             ModHooks.NewGameHook += AddFinder;
             ModHooks.SavegameLoadHook += Load;
             On.HealthManager.SendDeathEvent += sendDeathEvent;
+            //On.HealthManager.TakeDamage += delegateDamage;
             On.BossSceneController.EndBossScene += HookEndBossScene;
         }
         private void sendDeathEvent(On.HealthManager.orig_SendDeathEvent orig, HealthManager self)
@@ -176,12 +181,38 @@ namespace DoubleBosses
         {
             GameManager.instance.gameObject.AddComponent<AllFinder>();
         }
+        /*
+        private void delegateDamage(On.HealthManager.orig_TakeDamage orig, HealthManager self, HitInstance hitInstance)
+        {
+            orig.Invoke(self, hitInstance);
+            var Grimm2 = GameObject.Find("Nightmare Grimm Boss 2");
+            if (Grimm2 != null)
+            {
+                var Grimm1 = GameObject.Find("Nightmare Grimm Boss");
+                if (self.gameObject == Grimm1)
+                {
+                    Grimm2.GetComponent<HealthManager>().hp -= (int)(hitInstance.DamageDealt);
+
+                    PlayMakerFSM Stun2 = Grimm2.LocateMyFSM("Stun");
+                    Stun2.SendEvent("STUN DAMAGE");
+                }
+                else if (self.gameObject == Grimm2)
+                {
+                    Grimm1.GetComponent<HealthManager>().hp -= (int)(hitInstance.DamageDealt);
+
+                    PlayMakerFSM Stun1 = Grimm1.LocateMyFSM("Stun");
+                    Stun1.SendEvent("STUN DAMAGE");
+                }
+            }
+        }
+        */
         public void Unload()
         {
             ModHooks.NewGameHook -= AddFinder;
             ModHooks.SavegameLoadHook -= Load;
             On.HealthManager.SendDeathEvent -= sendDeathEvent;
             On.BossSceneController.EndBossScene -= HookEndBossScene;
+            //On.HealthManager.TakeDamage -= delegateDamage;
             AllFinder allFinder = GameManager.instance.gameObject.GetComponent<AllFinder>();
             if (allFinder != null)
             {
