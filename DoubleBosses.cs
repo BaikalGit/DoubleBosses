@@ -9,15 +9,55 @@ using UnityEngine;
 
 namespace DoubleBosses
 {
-    public class DoubleBosses : Mod, ITogglableMod
+    public class GlobalSettingsClass
+    {
+        public bool hardMode = true;
+    }
+
+    public class DoubleBosses : Mod, ITogglableMod, IGlobalSettings<GlobalSettingsClass>, IMenuMod
     {
 
 #pragma warning disable CS8632
+        public static GlobalSettingsClass GS { get; set; } = new GlobalSettingsClass();
+        public void OnLoadGlobal(GlobalSettingsClass s)
+        {
+            GS = s;
+        }
+
+        public GlobalSettingsClass OnSaveGlobal()
+        {
+            return GS;
+        }
+        public bool ToggleButtonInsideMenu { get; }
+        public List<IMenuMod.MenuEntry> GetMenuData(IMenuMod.MenuEntry? toggleButtonEntry)
+        {
+            return new List<IMenuMod.MenuEntry>
+        {
+            new IMenuMod.MenuEntry {
+                Name = "Hard Mode",
+                Description = "Makes every boss share their health, so you have to deal with both of them, untill they or you die",
+                Values = new string[] {
+                    "Off",
+                    "On"
+                },
+                Saver = opt => GS.hardMode = opt switch {
+                    0 => false,
+                    1 => true,
+                    // This should never be called
+                    _ => throw new InvalidOperationException()
+                },
+                Loader = () => GS.hardMode switch {
+                    false => 0,
+                    true => 1,
+                }
+            }
+        };
+        }
 
         public static DoubleBosses? Instance { get; private set; }
         public static DoubleBosses UnsafeInstance => Instance!;
         new public string GetName() => "DoubleBosses";
-        public override string GetVersion() => "1.0.0.0";
+        public override string GetVersion() => "0.2.4.0";
 
         public static readonly HashSet<string> trackedBosses = new()
         {
@@ -60,8 +100,6 @@ namespace DoubleBosses
             ModHooks.NewGameHook += AddFinder;
             ModHooks.SavegameLoadHook += Load;
             On.HealthManager.SendDeathEvent += sendDeathEvent;
-            //On.HealthManager.TakeDamage += delegateDamage;
-            On.BossSceneController.EndBossScene += HookEndBossScene;
         }
         private void sendDeathEvent(On.HealthManager.orig_SendDeathEvent orig, HealthManager self)
         {
@@ -75,104 +113,7 @@ namespace DoubleBosses
 
             orig(self);
         }
-        private void HookEndBossScene(On.BossSceneController.orig_EndBossScene orig, BossSceneController self)
-        {
-            //DeepSeek wrote this one. I have no idea how this call history check works, but it is useful so i'm putting it here
-            var stackTrace = new System.Diagnostics.StackTrace(1);
-            var callerFrame = stackTrace.GetFrame(0);
-            var callerMethod = callerFrame.GetMethod();
 
-            Modding.Logger.Log($"[Boss Reset] EndBossScene called by: {callerMethod.DeclaringType?.Name}.{callerMethod.Name}");
-            LogCallStack(stackTrace);
-
-            orig(self);
-        }
-
-        private void LogCallStack(System.Diagnostics.StackTrace stackTrace)
-        {
-            Modding.Logger.Log("[Boss Reset] Call stack:");
-            for (int i = 0; i < stackTrace.FrameCount; i++)
-            {
-                var frame = stackTrace.GetFrame(i);
-                var method = frame.GetMethod();
-                if (method != null)
-                {
-                    Modding.Logger.Log($"[Boss Reset]   [{i}] {method.DeclaringType?.Name}.{method.Name}");
-
-                }
-            }
-            LogActiveFsmStates();
-        }
-
-        private void LogActiveFsmStates()
-        {
-            try
-            {
-                Type playMakerFSMType = null;
-
-                string[] possibleTypeNames = {
-                    "PlayMakerFSM",
-                    "HutongGames.PlayMaker.Fsm",
-                    "HutongGames.PlayMaker.PlayMakerFSM",
-                    "Fsm",
-                    "FsmComponent"
-                };
-
-                        string[] possibleAssemblies = {
-                    "Assembly-CSharp",
-                    "Assembly-CSharp-firstpass",
-                    "PlayMaker",
-                    "HutongGames.PlayMaker"
-                };
-
-                // Try combinations
-                foreach (var typeName in possibleTypeNames)
-                {
-                    foreach (var assembly in possibleAssemblies)
-                    {
-                        string fullTypeName = $"{typeName}, {assembly}";
-                        playMakerFSMType = Type.GetType(fullTypeName);
-
-                        if (playMakerFSMType != null)
-                        {
-                            Modding.Logger.Log($"[Boss Reset] Found FSM type: {fullTypeName}");
-                            break;
-                        }
-                    }
-                    if (playMakerFSMType != null) break;
-                }
-
-                if (playMakerFSMType == null)
-                {
-                    Modding.Logger.Log("[Boss Reset] Could not find PlayMakerFSM type in any assembly");
-                    return;
-                }
-
-                var allFsms = UnityEngine.Object.FindObjectsOfType(playMakerFSMType);
-                Modding.Logger.Log($"[Boss Reset] Found {allFsms.Length} FSMs in scene");
-
-                foreach (var fsmComponent in allFsms)
-                {
-                    var gameObjectProp = playMakerFSMType.GetProperty("gameObject");
-                    var gameObject = gameObjectProp?.GetValue(fsmComponent) as UnityEngine.GameObject;
-
-                    if (gameObject != null && gameObject.name.Contains("Infected Knight"))
-                    {
-                        var fsmNameProp = playMakerFSMType.GetProperty("FsmName");
-                        var activeStateNameProp = playMakerFSMType.GetProperty("ActiveStateName");
-
-                        string fsmName = fsmNameProp?.GetValue(fsmComponent) as string ?? "Unknown";
-                        string stateName = activeStateNameProp?.GetValue(fsmComponent) as string ?? "Unknown";
-
-                        Modding.Logger.Log($"[Boss Reset] BOSS FSM: {gameObject.name} -> {fsmName} : {stateName}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Modding.Logger.LogError($"[Boss Reset] Error scanning FSMs: {ex.Message}");
-            }
-        }
         private void Load(int id)
         {
             AddFinder();
@@ -181,38 +122,11 @@ namespace DoubleBosses
         {
             GameManager.instance.gameObject.AddComponent<AllFinder>();
         }
-        /*
-        private void delegateDamage(On.HealthManager.orig_TakeDamage orig, HealthManager self, HitInstance hitInstance)
-        {
-            orig.Invoke(self, hitInstance);
-            var Grimm2 = GameObject.Find("Nightmare Grimm Boss 2");
-            if (Grimm2 != null)
-            {
-                var Grimm1 = GameObject.Find("Nightmare Grimm Boss");
-                if (self.gameObject == Grimm1)
-                {
-                    Grimm2.GetComponent<HealthManager>().hp -= (int)(hitInstance.DamageDealt);
-
-                    PlayMakerFSM Stun2 = Grimm2.LocateMyFSM("Stun");
-                    Stun2.SendEvent("STUN DAMAGE");
-                }
-                else if (self.gameObject == Grimm2)
-                {
-                    Grimm1.GetComponent<HealthManager>().hp -= (int)(hitInstance.DamageDealt);
-
-                    PlayMakerFSM Stun1 = Grimm1.LocateMyFSM("Stun");
-                    Stun1.SendEvent("STUN DAMAGE");
-                }
-            }
-        }
-        */
         public void Unload()
         {
             ModHooks.NewGameHook -= AddFinder;
             ModHooks.SavegameLoadHook -= Load;
             On.HealthManager.SendDeathEvent -= sendDeathEvent;
-            On.BossSceneController.EndBossScene -= HookEndBossScene;
-            //On.HealthManager.TakeDamage -= delegateDamage;
             AllFinder allFinder = GameManager.instance.gameObject.GetComponent<AllFinder>();
             if (allFinder != null)
             {

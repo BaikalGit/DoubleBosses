@@ -66,7 +66,21 @@ namespace DoubleBosses
                 .ToArray();
             fly.AddRange(extraFly);
             battleCtrlFsm.FsmVariables.FindFsmInt("Battle Enemies").Value = fly.Count;
+            if (DoubleBosses.GS.hardMode)
+            {
+                fly.ShareHealth(0, "Milfs_Hard");
+                StartCoroutine(InitHP());
+            }
         }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Giant Fly").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Giant Fly 2").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Giant Fly 3").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Giant Fly 4").GetComponent<HealthManager>().hp = 99999;
+        }
+
         bool AllGiantFlyDead()
         {
             string[] flyNames = { "Giant Fly", "Giant Fly 2", "Giant Fly 3", "Giant Fly 4" };
@@ -103,8 +117,8 @@ namespace DoubleBosses
     {
         internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
             (2, 0, 94.84f, 20.43f),
-            (3, 0, 102f, 16f),
-            (4, 0, 86f, 25f),
+            (3, 0, 93f, 16f),
+            (4, 0, 96f, 25f),
         };
 
         void Start()
@@ -228,10 +242,40 @@ namespace DoubleBosses
                 })
                 .ToArray();
             buzzers.AddRange(extraBuzzer);
-            //buzzers.ShareHealth(0, "DoubleBuzzers");
 
-            //StartCoroutine(InitHP());
+            if (DoubleBosses.GS.hardMode)
+            {
+                var buzzersPairs = new[] { ("Giant Buzzer Col", "Giant Buzzer Col 2", "Giant Buzzer Col 3", "Giant Buzzer Col 4"),
+                ("Giant Buzzer Col (1)", "Giant Buzzer Col 5", "Giant Buzzer Col 6", "Giant Buzzer Col 7") };
 
+                foreach (var (buzzerA, buzzerB, buzzerC, buzzerD) in buzzersPairs)
+                {
+                    var pair = buzzers
+                        .Filter(buzzer => buzzer.name == buzzerA || buzzer.name == buzzerB || buzzer.name == buzzerC || buzzer.name == buzzerD)
+                        .ToList();
+
+
+                    if (pair.Count == 4)
+                    {
+                        pair.ShareHealth(0, "DoubleBuzzers");
+                    }
+                }
+
+                StartCoroutine(InitHP());
+            }
+
+        }
+        private IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(1f);
+            GameObject.Find("Giant Buzzer Col").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Giant Buzzer Col 2").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Giant Buzzer Col 3").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Giant Buzzer Col 4").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Giant Buzzer Col (1)").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Giant Buzzer Col 5").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Giant Buzzer Col 6").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Giant Buzzer Col 7").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllGiantBuzzerDead()
         {
@@ -401,13 +445,25 @@ namespace DoubleBosses
                 .Map(info => {
                     GameObject prefab = mawleks[info.prefab];
                     var extra = GameObject.Instantiate(prefab, prefab.transform.parent);
-                    //extra.transform.position = prefab.transform.position with { x = info.x, y = info.y };
+                    extra.transform.position = prefab.transform.position with { x = prefab.transform.position.x + 5f, y = prefab.transform.GetPositionY() };
                     extra.name = "Mawlek Body " + info.num;
                     return extra;
                 })
                 .ToArray();
             mawleks.AddRange(extraMawleks);
+            if (DoubleBosses.GS.hardMode)
+            {
+                mawleks.ShareHealth(0, "Mawleks Hard");
+                StartCoroutine(InitHP());
+            }
         }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Mawlek Body").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mawlek Body 2").GetComponent<HealthManager>().hp = 99999;
+        }
+
         bool AllMawlekDead()
         {
             string[] flyNames = { "Mawlek Body", "Mawlek Body 2" };
@@ -452,10 +508,12 @@ namespace DoubleBosses
         internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
             (2, 0, 19.23f, 33.40f),
         };
-
+        PlayMakerFSM Knight1FSM;
+        PlayMakerFSM Knight2FSM;
+        GameObject shareHealthKnight;
+        List<GameObject> falseKnights;
         void Start()
         {
-
             if (BossSequenceController.IsInSequence)
             {
                 return;
@@ -466,8 +524,7 @@ namespace DoubleBosses
                     .First(go => go.name == "Battle Scene");
             PlayMakerFSM battleCtrlFsm = battleCtrl.LocateMyFSM("Battle Control");
 
-            var falseKnights = new[] { battleCtrl.Child("False Knight New")! }
-            .ToList();
+            falseKnights = new[] { battleCtrl.Child("False Knight New")! }.ToList();
 
 
             GameObject[] extraFalseKnights = extrasInfo
@@ -483,13 +540,38 @@ namespace DoubleBosses
             falseKnights.AddRange(extraFalseKnights);
             battleCtrlFsm.FsmVariables.FindFsmInt("Battle Enemies").Value = falseKnights.Count;
 
-            //StartCoroutine(InitHP());
+
+            Knight1FSM = falseKnights[0].LocateMyFSM("FalseyControl");
+            Knight2FSM = falseKnights[1].LocateMyFSM("FalseyControl");
+            if (DoubleBosses.GS.hardMode)
+            {
+                falseKnights.ShareHealth(0, "FKnights Hard");
+                shareHealthKnight = GameObject.Find("FKnights Hard");
+                Knight1FSM.RemoveAction("Roll End", 2);
+                Knight2FSM.RemoveAction("Roll End", 2);
+                shareHealthKnight.GetComponent<BoxCollider2D>().size = new Vector2(0.01f,0.01f);
+                switch (BossSceneController.Instance.BossLevel)
+                {
+                    case 0:
+                        shareHealthKnight.GetComponent<HealthManager>().hp = 1520;
+                        break;
+                    case 1:
+                        shareHealthKnight.GetComponent<HealthManager>().hp = 2120;
+                        break;
+                    case 2:
+                        shareHealthKnight.GetComponent<HealthManager>().hp = 2120;
+                        break;
+                }
+
+
+                StartCoroutine(InitHP());
+            }
 
         }
 
         private IEnumerator InitHP()
         {
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(0.5f);
             GameObject.Find("False Knight New").GetComponent<HealthManager>().hp = 99999;
             GameObject.Find("False Knight New 2").GetComponent<HealthManager>().hp = 99999;
         }
@@ -511,6 +593,54 @@ namespace DoubleBosses
             {
                 Modding.Logger.Log("Boss Death Status:\n" +
                                     string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
+            }
+            if (shareHealthKnight)
+            {
+                //Modding.Logger.Log($"Heatlh: {shareHealthKnight.GetComponent<HealthManager>().hp}");
+                //Modding.Logger.Log($"Active state of the barrel is: {GameObject.Find("Falling Barrel").LocateMyFSM("Fall Barrel Control").ActiveStateName}");
+                switch (BossSceneController.Instance.BossLevel)
+                {
+                    case 0:
+                        if (shareHealthKnight.GetComponent<HealthManager>().hp <= 1000)
+                        {
+                            Knight1FSM.SendEvent("STUN");
+                            Knight2FSM.SendEvent("STUN");
+                            shareHealthKnight.GetComponent<HealthManager>().hp = 1520;
+                        }
+                        break;
+                    case 1:
+                        if (shareHealthKnight.GetComponent<HealthManager>().hp <= 1000)
+                        {
+                            Knight1FSM.SendEvent("STUN");
+                            Knight2FSM.SendEvent("STUN");
+                            shareHealthKnight.GetComponent<HealthManager>().hp = 2120;
+                        }
+                        break;
+                    case 2:
+                        if (shareHealthKnight.GetComponent<HealthManager>().hp <= 1000)
+                        {
+                            Knight1FSM.SendEvent("STUN");
+                            Knight2FSM.SendEvent("STUN");
+                            shareHealthKnight.GetComponent<HealthManager>().hp = 2120;
+                        }
+                        break;
+                }
+                if (Knight1FSM.ActiveStateName == "Recover" && Knight2FSM.ActiveStateName != "Recover")
+                {
+                    Knight2FSM.SendEvent("STUN END");
+                }
+                else if (Knight2FSM.ActiveStateName == "Recover" && Knight1FSM.ActiveStateName != "Recover")
+                {
+                    Knight1FSM.SendEvent("STUN END");
+                }
+                if (Knight1FSM.ActiveStateName == "Blow" && Knight2FSM.ActiveStateName != "Blow")
+                {
+                    Knight2FSM.SetState("Blow");
+                }
+                else if (Knight2FSM.ActiveStateName == "Blow" && Knight1FSM.ActiveStateName != "Blow")
+                {
+                    Knight1FSM.SetState("Blow");
+                }
             }
         }
 
@@ -538,7 +668,10 @@ namespace DoubleBosses
         internal static readonly (int num, int prefab, float x, float y)[] extrasInfo = new[] {
             (2, 0, 48.7f, 31.5f),
         };
-
+        PlayMakerFSM Knight1FSM;
+        PlayMakerFSM Knight2FSM;
+        GameObject shareHealthKnight;
+        List<GameObject> falseKnights;
         void Start()
         {
 
@@ -573,7 +706,7 @@ namespace DoubleBosses
                 PlayMakerFSM DreamChampionFSM = falseKnights[i].LocateMyFSM("FalseyControl");
                 DreamChampionFSM.RemoveAction("State 1", 4);
                 DreamChampionFSM.RemoveAction("Stun Start", 11);
-                DreamChampionFSM.RemoveAction("Recover", 4);
+                //DreamChampionFSM.RemoveAction("Recover", 4);
                 DreamChampionFSM.RemoveAction("State 2", 4);
                 DreamChampionFSM.RemoveAction("Rage Slam", 5);
                 DreamChampionFSM.RemoveAction("Jump 2", 6);
@@ -591,8 +724,31 @@ namespace DoubleBosses
 
 
 
+            Knight1FSM = falseKnights[0].LocateMyFSM("FalseyControl");
+            Knight2FSM = falseKnights[1].LocateMyFSM("FalseyControl");
+            if (DoubleBosses.GS.hardMode)
+            {
+                falseKnights.ShareHealth(0, "FKnights Hard");
+                shareHealthKnight = GameObject.Find("FKnights Hard");
+                shareHealthKnight.GetComponent<BoxCollider2D>().size = new Vector2(0.01f, 0.01f);
+                Knight1FSM.RemoveAction("Roll End",1);
+                Knight2FSM.RemoveAction("Roll End",1);
+                switch (BossSceneController.Instance.BossLevel)
+                {
+                    case 0:
+                        shareHealthKnight.GetComponent<HealthManager>().hp = 1720;
+                        break;
+                    case 1:
+                        shareHealthKnight.GetComponent<HealthManager>().hp = 2200;
+                        break;
+                    case 2:
+                        shareHealthKnight.GetComponent<HealthManager>().hp = 2200;
+                        break;
+                }
 
-            //StartCoroutine(InitHP());
+
+                StartCoroutine(InitHP());
+            }
 
         }
 
@@ -621,7 +777,54 @@ namespace DoubleBosses
                 Modding.Logger.Log("Boss Death Status:\n" +
                                     string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
             }
-            
+            if (shareHealthKnight)
+            {
+                //Modding.Logger.Log($"Heatlh: {shareHealthKnight.GetComponent<HealthManager>().hp}");
+                //Modding.Logger.Log($"Active state of the barrel is: {GameObject.Find("Falling Barrel").LocateMyFSM("Fall Barrel Control").ActiveStateName}");
+                switch (BossSceneController.Instance.BossLevel)
+                {
+                    case 0:
+                        if (shareHealthKnight.GetComponent<HealthManager>().hp <= 1000)
+                        {
+                            Knight1FSM.SendEvent("STUN");
+                            Knight2FSM.SendEvent("STUN");
+                            shareHealthKnight.GetComponent<HealthManager>().hp = 1720;
+                        }
+                        break;
+                    case 1:
+                        if (shareHealthKnight.GetComponent<HealthManager>().hp <= 1000)
+                        {
+                            Knight1FSM.SendEvent("STUN");
+                            Knight2FSM.SendEvent("STUN");
+                            shareHealthKnight.GetComponent<HealthManager>().hp = 2200;
+                        }
+                        break;
+                    case 2:
+                        if (shareHealthKnight.GetComponent<HealthManager>().hp <= 1000)
+                        {
+                            Knight1FSM.SendEvent("STUN");
+                            Knight2FSM.SendEvent("STUN");
+                            shareHealthKnight.GetComponent<HealthManager>().hp = 2200;
+                        }
+                        break;
+                }
+                if (Knight1FSM.ActiveStateName == "Recover" && Knight2FSM.ActiveStateName != "Recover")
+                {
+                    Knight2FSM.SendEvent("STUN END");
+                }
+                else if (Knight2FSM.ActiveStateName == "Recover" && Knight1FSM.ActiveStateName != "Recover")
+                {
+                    Knight1FSM.SendEvent("STUN END");
+                }
+                if (Knight1FSM.ActiveStateName == "Blow" && Knight2FSM.ActiveStateName != "Blow")
+                {
+                    Knight2FSM.SetState("Blow");
+                }
+                else if (Knight2FSM.ActiveStateName == "Blow" && Knight1FSM.ActiveStateName != "Blow")
+                {
+                    Knight1FSM.SetState("Blow");
+                }
+            }
 
         }
 
@@ -792,6 +995,17 @@ namespace DoubleBosses
                 }
             };
             */
+            if (DoubleBosses.GS.hardMode)
+            {
+                hornets.ShareHealth(0, "Hornets Hard");
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Hornet Boss 1").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Hornet Boss 1 2").GetComponent<HealthManager>().hp = 99999;
         }
 
         bool AllHornets()
@@ -1111,7 +1325,19 @@ namespace DoubleBosses
             chargers.AddRange(extraChargers);
             PlayMakerFSM chargerFSM2 = chargers[1].LocateMyFSM("Mossy Control");
             chargerFSM2.GetState("Hidden").Actions = new HutongGames.PlayMaker.FsmStateAction[]{new CustomFsmAction(){method = () => { chargerFSM2.SetState("Emerge Pause");}}};
+            if (DoubleBosses.GS.hardMode)
+            {
+                chargers.ShareHealth(0, "Mossys Hard");
+                StartCoroutine(InitHP());
+            }
         }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Mega Moss Charger").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mega Moss Charger 2").GetComponent<HealthManager>().hp = 99999;
+        }
+
         bool AllChargersDead()
         {
             string[] chargersNames = { "Mega Moss Charger", "Mega Moss Charger 2" };
@@ -1180,7 +1406,20 @@ namespace DoubleBosses
                 })
                 .ToArray();
             mothers.AddRange(extraMothers);
+            if (DoubleBosses.GS.hardMode)
+            {
+                mothers.ShareHealth(0, "Mothers Hard");
+                StartCoroutine(InitHP());
+            }
         }
+
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Fluke Mother").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Fluke Mother 2").GetComponent<HealthManager>().hp = 99999;
+        }
+
         bool AllMothersDead()
         {
             string[] mothersNames = { "Fluke Mother", "Fluke Mother 2" };
@@ -1343,11 +1582,25 @@ namespace DoubleBosses
             extraSubFSM.FsmVariables.FindFsmGameObject("Mantis 1").Value = GameObject.Find("Mantis Lord S1 2");
             extraSubFSM.FsmVariables.FindFsmGameObject("Mantis 2").Value = GameObject.Find("Mantis Lord S2 2");
 
+
             extraSubFSM.SetState("Init Pause");
+            if (DoubleBosses.GS.hardMode)
+            {
+                List<GameObject> allLords = new[] { GameObject.Find("Mantis Lord S1"), GameObject.Find("Mantis Lord S2"), GameObject.Find("Mantis Lord S1 2"), GameObject.Find("Mantis Lord S2 2"), }.ToList();
+                allLords.ShareHealth(0, "SupaLords");
+                StartCoroutine(InitHP());
+            }
 
 
         }
-
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Mantis Lord S1").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mantis Lord S2").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mantis Lord S1 2").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mantis Lord S2 2").GetComponent<HealthManager>().hp = 99999;
+        }
 
         void Update()
         {
@@ -1525,11 +1778,25 @@ namespace DoubleBosses
             extraSubFSM.FsmVariables.FindFsmGameObject("Mantis 3").Value = GameObject.Find("Mantis Lord S3 2");
 
             extraSubFSM.SetState("Init Pause");
-
+            if (DoubleBosses.GS.hardMode)
+            {
+                List<GameObject> allLords = new[] { GameObject.Find("Mantis Lord S1"), GameObject.Find("Mantis Lord S2"), GameObject.Find("Mantis Lord S3"), GameObject.Find("Mantis Lord S1 2"), GameObject.Find("Mantis Lord S2 2"), GameObject.Find("Mantis Lord S3 2")}.ToList();
+                allLords.ShareHealth(0, "SupaSupaLords");
+                StartCoroutine(InitHP());
+            }
 
         }
 
-
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Mantis Lord S1").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mantis Lord S2").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mantis Lord S3").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mantis Lord S1 2").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mantis Lord S2 2").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mantis Lord S3 2").GetComponent<HealthManager>().hp = 99999;
+        }
 
         void Update()
         {
@@ -1564,6 +1831,15 @@ namespace DoubleBosses
             (2, 1, 114.7f, 15.01f),
         };
         List<GameObject> oblobbles;
+        PlayMakerFSM o1FSM;
+        PlayMakerFSM o2FSM;
+        PlayMakerFSM o3FSM;
+        PlayMakerFSM o4FSM;
+
+        PlayMakerFSM os1FSM;
+        PlayMakerFSM os2FSM;
+        PlayMakerFSM os3FSM;
+        PlayMakerFSM os4FSM;
         void Start()
         {
 
@@ -1590,6 +1866,36 @@ namespace DoubleBosses
                 })
                 .ToArray();
             oblobbles.AddRange(extraOblobbles);
+            if (DoubleBosses.GS.hardMode)
+            {
+                oblobbles.ShareHealth(0, "FatBees");
+                o1FSM = oblobbles[0].LocateMyFSM("fat fly bounce");
+                o2FSM = oblobbles[1].LocateMyFSM("fat fly bounce");
+                o3FSM = oblobbles[2].LocateMyFSM("fat fly bounce");
+                o4FSM = oblobbles[3].LocateMyFSM("fat fly bounce");
+
+                os1FSM = oblobbles[0].LocateMyFSM("Fatty Fly Attack");
+                os2FSM = oblobbles[1].LocateMyFSM("Fatty Fly Attack");
+                os3FSM = oblobbles[2].LocateMyFSM("Fatty Fly Attack");
+                os4FSM = oblobbles[3].LocateMyFSM("Fatty Fly Attack");
+
+                o1FSM.FsmVariables.FindFsmBool("Rage").Value = true;
+                o2FSM.FsmVariables.FindFsmBool("Rage").Value = true;
+                o3FSM.FsmVariables.FindFsmBool("Rage").Value = true;
+                o4FSM.FsmVariables.FindFsmBool("Rage").Value = true;
+
+                os1FSM.FsmVariables.FindFsmBool("Rage").Value = true;
+                os2FSM.FsmVariables.FindFsmBool("Rage").Value = true;
+                os3FSM.FsmVariables.FindFsmBool("Rage").Value = true;
+                os4FSM.FsmVariables.FindFsmBool("Rage").Value = true;
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Mega Fat Bee").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mega Fat Bee 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllOblobblesDead()
         {
@@ -1610,6 +1916,19 @@ namespace DoubleBosses
                 Modding.Logger.Log("Boss Death Status:\n" +
                                     string.Join("\n", DoubleBosses.BossDeathStatus.Select(kv => $"{kv.Key}: {(kv.Value ? "Dead" : "Alive")}")));
             }
+            if (DoubleBosses.GS.hardMode)
+            {
+                o1FSM.SendEvent("RAGE");
+                o2FSM.SendEvent("RAGE");
+                o3FSM.SendEvent("RAGE");
+                o4FSM.SendEvent("RAGE");
+
+                os1FSM.SendEvent("RAGE");
+                os2FSM.SendEvent("RAGE");
+                os3FSM.SendEvent("RAGE");
+                os4FSM.SendEvent("RAGE");
+            }
+
         }
 
 
@@ -1742,6 +2061,25 @@ namespace DoubleBosses
             hiveKnightFSM.DisableAction("Intro", 1);
             hiveKnightFSM.DisableAction("Intro End", 2);
             hiveKnightFSM.DisableAction("Jump", 3);
+            if (DoubleBosses.GS.hardMode)
+            {
+                HiveKnights.ShareHealth(0, "BeeKnights");
+                var HiveKnights1FSM = HiveKnights[0].LocateMyFSM("Control");
+                var HiveKnights2FSM = HiveKnights[1].LocateMyFSM("Control");
+                HiveKnights1FSM.RemoveAction("Phase Check", 0);
+                HiveKnights2FSM.RemoveAction("Phase Check", 0);
+
+                HiveKnights1FSM.FsmVariables.FindFsmInt("HP").Value = 1;
+                HiveKnights2FSM.FsmVariables.FindFsmInt("HP").Value = 1;
+
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Hive Knight").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Hive Knight 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllHiveKnightsDead()
         {
@@ -1837,6 +2175,24 @@ namespace DoubleBosses
                 })
                 .ToArray();
             BrokenVessels.AddRange(extraBrokenVessels);
+            if (DoubleBosses.GS.hardMode)
+            {
+                BrokenVessels.ShareHealth(0, "BVessels");
+                var bv1FSM = BrokenVessels[0].LocateMyFSM("Shake Token Control");
+                var bv2FSM = BrokenVessels[1].LocateMyFSM("Shake Token Control");
+                bv1FSM.RemoveAction("Check", 0);
+                bv2FSM.RemoveAction("Check", 0);
+                bv1FSM.FsmVariables.FindFsmInt("HP").Value = 1;
+                bv2FSM.FsmVariables.FindFsmInt("HP").Value = 1;
+
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Infected Knight").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Infected Knight 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllBrokenVesselsDead()
         {
@@ -1904,7 +2260,6 @@ namespace DoubleBosses
         };
         List<GameObject> LostKins;
         bool doneCorpse = false;
-        bool doneDreamOrb = false;
         void Start()
         {
 
@@ -1940,6 +2295,17 @@ namespace DoubleBosses
             LostKins.AddRange(extraLostKins);
             PlayMakerFSM Kin2FSM = LostKins[1].LocateMyFSM("IK Control");
             Kin2FSM.DisableAction("Set X GG", 0);
+            if (DoubleBosses.GS.hardMode)
+            {
+                LostKins.ShareHealth(0, "SupaVessels");
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Lost Kin").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Lost Kin 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllLostKinsDead()
         {
@@ -2022,6 +2388,17 @@ namespace DoubleBosses
                 })
                 .ToArray();
             Nosks.AddRange(extraNosks);
+            if (DoubleBosses.GS.hardMode)
+            {
+                Nosks.ShareHealth(0, "Spiders");
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Mimic Spider").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mimic Spider 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllNosksDead()
         {
@@ -2087,6 +2464,17 @@ namespace DoubleBosses
                 })
                 .ToArray();
             Nosks.AddRange(extraNosks);
+            if (DoubleBosses.GS.hardMode)
+            {
+                Nosks.ShareHealth(0, "Spiderss");
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Mimic Spider").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mimic Spider 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllNosksDead()
         {
@@ -2354,6 +2742,19 @@ namespace DoubleBosses
             extraSubFSM.FsmVariables.FindFsmGameObject("Nosk Transform").Value      = extraTransform;
             extraNoskHornetFSM.FsmVariables.FindFsmGameObject("Glob Dropper").Value = extraGlobDropper;
 
+            if (DoubleBosses.GS.hardMode)
+            {
+                List<GameObject> HornetNosks = new[] { GameObject.Find("Hornet Nosk"), GameObject.Find("Hornet Nosk 2") }.ToList();
+                HornetNosks.ShareHealth(0, "HornetNosks");
+                StartCoroutine(InitHP());
+            }
+
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Hornet Nosk").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Hornet Nosk 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllHornetNosksDead()
         {
@@ -2449,12 +2850,23 @@ namespace DoubleBosses
                 .Map(info => {
                     GameObject prefab = Collectors[info.prefab];
                     var extra = GameObject.Instantiate(prefab);
-                    extra.transform.position = prefab.transform.position with { x = prefab.transform.GetPositionX(), y = prefab.transform.GetPositionY() };
+                    extra.transform.position = prefab.transform.position with { x = prefab.transform.GetPositionX()-5f, y = prefab.transform.GetPositionY() };
                     extra.name = prefab.name + " " + info.num;
                     return extra;
                 })
                 .ToArray();
             Collectors.AddRange(extraCollectors);
+            if (DoubleBosses.GS.hardMode)
+            {
+                Collectors.ShareHealth(0, "Collectors");
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Jar Collector").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Jar Collector 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllCollectorsDead()
         {
@@ -2514,7 +2926,7 @@ namespace DoubleBosses
                 .Map(info => {
                     GameObject prefab = CollectorsV[info.prefab];
                     var extra = GameObject.Instantiate(prefab);
-                    extra.transform.position = prefab.transform.position with { x = prefab.transform.GetPositionX(), y = prefab.transform.GetPositionY() };
+                    extra.transform.position = prefab.transform.position with { x = prefab.transform.GetPositionX()-5f, y = prefab.transform.GetPositionY() };
                     extra.name = prefab.name + " " + info.num;
                     return extra;
                 })
@@ -2683,6 +3095,21 @@ namespace DoubleBosses
             Lancer2FSMDeath.RemoveAction("Set", 1);
             Lancer2FSMDeath.RemoveAction("Set", 0);
             */
+            if (DoubleBosses.GS.hardMode)
+            {
+                List<GameObject> foes = new[] { GameObject.Find("Lancer"), GameObject.Find("Lancer 2"), GameObject.Find("Lobster"), GameObject.Find("Lobster 2") }.ToList();
+                foes.ShareHealth(0, "TheFuck");
+                StartCoroutine(InitHP());
+            }
+        }
+
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Lancer").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Lancer 2").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Lobster").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Lobster 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllLancersDead()
         {
@@ -2842,6 +3269,17 @@ namespace DoubleBosses
             CG2fsm.FsmVariables.FindFsmGameObject("Beam Ball").Value = extraBeamBall;
             CG2fsm.FsmVariables.FindFsmGameObject("Beam").Value = extraBeam;
             CG2fsm.FsmVariables.FindFsmGameObject("Beam Impact").Value = extraBeamImpact;
+            if (DoubleBosses.GS.hardMode)
+            {
+                CGs.ShareHealth(0, "CGs");
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Mega Zombie Beam Miner (1)").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mega Zombie Beam Miner (1) 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllCGDead()
         {
@@ -2948,6 +3386,17 @@ namespace DoubleBosses
             eCG2fsm.FsmVariables.FindFsmGameObject("Beam Ball").Value = extraBeamBall;
             eCG2fsm.FsmVariables.FindFsmGameObject("Beam").Value = extraBeam;
             eCG2fsm.FsmVariables.FindFsmGameObject("Beam Impact").Value = extraBeamImpact;
+            if (DoubleBosses.GS.hardMode)
+            {
+                eCGs.ShareHealth(0, "eCGs");
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Zombie Beam Miner Rematch").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Zombie Beam Miner Rematch 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllECGDead()
         {
@@ -3003,7 +3452,7 @@ namespace DoubleBosses
                 .Map(info => {
                     GameObject prefab = uumie[info.prefab];
                     var extra = GameObject.Instantiate(prefab);
-                    extra.transform.position = prefab.transform.position with { x = prefab.transform.position.x + 5f, y = prefab.transform.GetPositionY() };
+                    extra.transform.position = prefab.transform.position with { x = prefab.transform.position.x + 10f, y = prefab.transform.GetPositionY() };
                     extra.name = prefab.name + " " + info.num;
                     return extra;
                 })
@@ -3014,10 +3463,11 @@ namespace DoubleBosses
             bScene.RemoveAction("End", 0);
 
             //HutongGames.PlayMaker.Actions.SetPolygonCollider();
+            //HutongGames.PlayMaker.Actions.SendEventByName();
+            //HutongGames.PlayMaker.Actions.Trigger2dEventLayer();
             uumuu1FSM = uumie[0].LocateMyFSM("Mega Jellyfish");
             uumuu2FSM = uumie[1].LocateMyFSM("Mega Jellyfish");
-            uumuu2FSM.SetState("Wake Pause");
-            
+
             multizapsExtra = GameObject.Instantiate(GameObject.Find("Mega Jellyfish Multizaps"));
             MeshRenderer enterSpriteRenderer = uumie[1].transform.Find("Entry Sprite").gameObject.GetComponent<MeshRenderer>();
             uumuu2FSM.GetState("Init").Actions[1] = new CustomFsmAction()
@@ -3032,6 +3482,25 @@ namespace DoubleBosses
                     enterSpriteRenderer.enabled = false;    
                 }
             };
+            StartCoroutine(DelayedSpawn());
+            if (DoubleBosses.GS.hardMode)
+            {
+                uumie.ShareHealth(0, "uumie");
+                var umuushare = GameObject.Find("uumie");
+                umuushare.GetComponent<BoxCollider2D>().size = new Vector2(0.01f, 0.01f);
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Mega Jellyfish GG").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mega Jellyfish GG 2").GetComponent<HealthManager>().hp = 99999;
+        }
+        IEnumerator DelayedSpawn()
+        {
+            yield return new WaitForSeconds(1f);
+            uumuu2FSM.SendEvent("BATTLE START");
         }
         bool AllUumieDead()
         {
@@ -3054,6 +3523,13 @@ namespace DoubleBosses
             //Modding.Logger.Log($"Current state of the uumu is: {uumuu2FSM.ActiveStateName}");
             Modding.Logger.Log($"Pattern is: {uumuu2FSM.FsmVariables.FindFsmGameObject("Multizaps").Value}");
             uumuu2FSM.FsmVariables.FindFsmGameObject("Multizaps").Value = multizapsExtra;
+            /*
+            if(uumie[0].transform.position.y > 134f)
+            {
+                uumie[0].transform.position = new Vector2(uumie[0].transform.position.x, 120f);
+                uumie[1].transform.position = new Vector2(uumie[1].transform.position.x, 120f);
+            }
+            */
         }
 
         void OnDestroy()
@@ -3101,6 +3577,25 @@ namespace DoubleBosses
             PlayMakerFSM bScene = GameObject.Find("Battle Scene").LocateMyFSM("Battle Control");
             bScene.RemoveAction("End", 4);
             bScene.RemoveAction("End", 1);
+            if (DoubleBosses.GS.hardMode)
+            {
+                traitors.ShareHealth(0, "Traitors");
+                var t1FSM = traitors[0].LocateMyFSM("Mantis");
+                var t2FSM = traitors[1].LocateMyFSM("Mantis");
+
+                t1FSM.RemoveAction("Slam?", 1);
+                t2FSM.RemoveAction("Slam?", 1);
+
+                t1FSM.FsmVariables.FindFsmInt("HP").Value = 1;
+                t2FSM.FsmVariables.FindFsmInt("HP").Value = 1;
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Mantis Traitor Lord").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Mantis Traitor Lord 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllTraitorsDead()
         {
@@ -3176,6 +3671,17 @@ namespace DoubleBosses
                     GPFSM2.FsmVariables.FindFsmGameObject("Charge Tink").Value = extraTink;
                 }
             };
+            if (DoubleBosses.GS.hardMode)
+            {
+                princes.ShareHealth(0, "GayPrinces");
+                StartCoroutine(InitHP());
+            }
+        }
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Grey Prince").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Grey Prince 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllPrincesDead()
         {
@@ -3255,6 +3761,7 @@ namespace DoubleBosses
                 Modding.Logger.Log("Working inside QoL");
                 //control.GetState("Init").ChangeTransition("FINISHED", "Intro Roar");
 
+                //i wish i found out about this way of changing vars in actions earlier :(
                 ((HutongGames.PlayMaker.Actions.Wait)control.GetState("Intro 2").Actions[3]).time = 0.01f;
                 ((HutongGames.PlayMaker.Actions.Wait)control.GetState("Intro 1").Actions[0]).time = 0.01f;
                 ((HutongGames.PlayMaker.Actions.Wait)control.GetState("Intro Roar").Actions[7]).time = 1f;
@@ -3308,6 +3815,29 @@ namespace DoubleBosses
                     turnOnBursts();
                 }
             };
+
+            if (DoubleBosses.GS.hardMode)
+            {
+                vessels.ShareHealth(0, "TheFight");
+                var v1FSM = vessels[0].LocateMyFSM("Control");
+                var v2FSM = vessels[1].LocateMyFSM("Control");
+
+                v1FSM.RemoveAction("Phase?", 0);
+                v2FSM.RemoveAction("Phase?", 0);
+
+                v1FSM.FsmVariables.FindFsmInt("HP").Value = 1;
+                v2FSM.FsmVariables.FindFsmInt("HP").Value = 1;
+
+                StartCoroutine(InitHP());
+            }
+
+        }
+
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("HK Prime").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("HK Prime 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllVesselsDead()
         {
@@ -3435,6 +3965,26 @@ namespace DoubleBosses
                 }
             };
             ((HutongGames.PlayMaker.Actions.FindChild)grimm2FSM.GetState("Init").Actions[11]).childName = "Nightmare Grimm Boss 2";
+
+            if (DoubleBosses.GS.hardMode)
+            {
+                List<GameObject> actualgrimms = new[] { GameObject.Find("Nightmare Grimm Boss"), GameObject.Find("Nightmare Grimm Boss 2") }.ToList();
+                actualgrimms.ShareHealth(0, "TheChallenge");
+
+                grimmActual1FSM.RemoveAction("Balloon?", 0);
+                grimmActual2FSM.RemoveAction("Balloon?", 0);
+
+                grimmActual1FSM.FsmVariables.FindFsmInt("HP").Value = 1;
+                grimmActual2FSM.FsmVariables.FindFsmInt("HP").Value = 1;
+                StartCoroutine(InitHP());
+            }
+        }
+
+        IEnumerator InitHP()
+        {
+            yield return new WaitForSeconds(2f);
+            GameObject.Find("Nightmare Grimm Boss").GetComponent<HealthManager>().hp = 99999;
+            GameObject.Find("Nightmare Grimm Boss 2").GetComponent<HealthManager>().hp = 99999;
         }
         bool AllGrimmsDead()
         {
